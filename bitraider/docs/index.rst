@@ -38,7 +38,7 @@ In auth.txt:
     MY-API-PASSPHRASE-HERE
 
 
-4. Create an object that inherits from strategy. Implement all necessary functions. For Example:
+4. Create a class in a Python file that inherits from strategy. Implement all necessary functions. For Example:
 ::
 
     from bitraider import strategy as strategy
