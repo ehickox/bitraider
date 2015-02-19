@@ -7,7 +7,7 @@ Welcome to bitraider's documentation!
 =====================================
 A Library of tools for algorithmic Bitcoin trading in Python. Bitraider includes a Coinbase 
 Exchange API wrapper, a CLI dashboard for backtesting or running a trader, and an abstract
-strategy object that enables you to implement different trading techniques.
+strategy class that enables you to implement different trading techniques.
 
 Quickstart:
 -----------
