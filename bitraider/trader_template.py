@@ -67,6 +67,70 @@ class runner():
         if strategy is not None:
             self.strategies.append(strategy)
 
+    def run(self):
+        # Time Configuration
+        curr_time = time.time() # Seconds since Jan 1st, 1970
+        curr_timezone = pytz.timezone("US/Central")
+
+        input = ""
+        print "Type \'help\' to see a list of all possible commands."
+        while True:
+            input = raw_input("> ")
+            if input == "help":
+                self.print_all_commands()
+            if input == "price":
+                self.print_curr_price()
+            if input == "run":
+                self.set_ticker_on()
+            if input == "exit":
+                sys.exit()
+            if input == "load":
+                print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
+                input = raw_input("> ")
+                filename = str(input)
+                print("Type the name of the class within "+str(input)+" representing the strategy to load:")
+                input = raw_input("> ")
+                loaded_strategy = str(input)
+                self.load_strategy(filename, loaded_strategy)
+            if input == "backtest":
+                usd = 1000
+                btc = 1
+                days_back_in_time = 7
+                print("Enter the number of days back in time to backtest on: ")
+                input = raw_input("> ")
+                if input == "":
+                    print("Performing backtest on default of 7 days.")
+                else:
+                    days_back_in_time = float(input)
+                    print("Performing backtest on last "+str(days_back_in_time)+" days.")
+
+                curr_time = datetime.now(tz=curr_timezone)
+                start_time = curr_time - timedelta(seconds=86400*days_back_in_time)
+                start_time = start_time.isoformat(' ')
+                end_time = curr_time.isoformat(' ')
+                print("Enter the initial USD amount:")
+                input = raw_input("> ")
+                if input == "":
+                    print("Using default starting USD amount of $1,000")
+                else:
+                    usd = float(input)
+                    print("Using starting USD amount of $"+str(usd))
+                
+                print("Enter the initial BTC amount:")
+                input = raw_input("> ")
+                if input == "":
+                    print("Using default starting BTC amount of 1")
+                else:
+                    btc = float(input)
+                    print("Using starting BTC amount of "+str(btc))
+
+                historic_data = self.exchange.get_historic_rates(start_time=start_time, end_time=end_time, granularity=self.strategies[0].interval)
+
+                self.strategies[0].backtest_strategy(historic_data=historic_data, start_usd=usd, start_btc=btc,
+                        start_time=start_time, end_time=end_time)
+    
+
+
     def print_curr_price(self):
         """Print the most recent price."""
         print(self.exchange.get_last_trade('BTC-USD')['price'])
@@ -88,68 +152,10 @@ class runner():
         instance_of_loaded_strategy = loaded_strategy_()
         self.strategies.append(instance_of_loaded_strategy)
         print("Loaded strategy: "+str(cls)+" from file: "+str(module)+".py")
-        
-if __name__=="__main__":
     
+def run():
     my_runner = runner()
-    # Time Configuration
-    curr_time = time.time() # Seconds since Jan 1st, 1970
-    curr_timezone = pytz.timezone("US/Central")
+    my_runner.run()
 
-    input = ""
-    print "Type \'help\' to see a list of all possible commands."
-    while True:
-        input = raw_input("> ")
-        if input == "help":
-            my_runner.print_all_commands()
-        if input == "price":
-            my_runner.print_curr_price()
-        if input == "run":
-            my_runner.set_ticker_on()
-        if input == "exit":
-            sys.exit()
-        if input == "load":
-            print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
-            input = raw_input("> ")
-            filename = str(input)
-            print("Type the name of the class within "+str(input)+" representing the strategy to load:")
-            input = raw_input("> ")
-            loaded_strategy = str(input)
-            my_runner.load_strategy(filename, loaded_strategy)
-        if input == "backtest":
-            usd = 1000
-            btc = 1
-            days_back_in_time = 7
-            print("Enter the number of days back in time to backtest on: ")
-            input = raw_input("> ")
-            if input == "":
-                print("Performing backtest on default of 7 days.")
-            else:
-                days_back_in_time = float(input)
-                print("Performing backtest on last "+str(days_back_in_time)+" days.")
-
-            curr_time = datetime.now(tz=curr_timezone)
-            start_time = curr_time - timedelta(seconds=86400*days_back_in_time)
-            start_time = start_time.isoformat(' ')
-            end_time = curr_time.isoformat(' ')
-            print("Enter the initial USD amount:")
-            input = raw_input("> ")
-            if input == "":
-                print("Using default starting USD amount of $1,000")
-            else:
-                usd = float(input)
-                print("Using starting USD amount of $"+str(usd))
-            
-            print("Enter the initial BTC amount:")
-            input = raw_input("> ")
-            if input == "":
-                print("Using default starting BTC amount of 1")
-            else:
-                btc = float(input)
-                print("Using starting BTC amount of "+str(btc))
-
-            historic_data = my_runner.exchange.get_historic_rates(start_time=start_time, end_time=end_time, granularity=my_runner.strategies[0].interval)
-
-            my_runner.strategies[0].backtest_strategy(historic_data=historic_data, start_usd=usd, start_btc=btc,
-                    start_time=start_time, end_time=end_time)
-    
+if __name__=="__main__":
+   run() 

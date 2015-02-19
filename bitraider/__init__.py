@@ -1,3 +1,7 @@
+from cbexchange import cb_exchange
+from trader_template import runner
+from strategy import strategy
+
 # bitraider
 #
 # Copyright (C) 2015 Eli Hickox
@@ -12,6 +16,8 @@ strategy object that enables you to implement different trading techniques.
 
 ###Quickstart:
 
+Create an `auth.txt` containing your Coinbase API key, secret, and passphrase on lines 1, 2, and 3 respectively.
+
 Create an object that inherits from strategy. Implement all necessary functions. For Example:
 
     #!python
@@ -23,7 +29,7 @@ Create an object that inherits from strategy. Implement all necessary functions.
             for timeslice in data:
                 pass
 
-run:
+Run:
 
     $python trader_template.py
 
