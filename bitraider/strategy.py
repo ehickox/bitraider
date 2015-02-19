@@ -33,7 +33,7 @@ class strategy(object):
         \n]
         \nEach inner list contains:[time, low, high, open, close]
 
-        This method should loop through historical_data, making buy or sell decisions based on available data. You can use the static utility methods in strategy to assist you. You should also format this method to accept:
+        \nThis method should loop through historical_data, making buy or sell decisions based on available data. You can use the static utility methods in strategy to assist you. You should also format this method to accept:
         \n`start_usd`: the starting amount of USD for this simulation
         \n`start_btc`: the starting amount of BTC for this simulation
         """

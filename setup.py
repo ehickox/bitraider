@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='bitraider',
-    version='0.0.3a1',
+    version='0.0.3a2',
     description='A suite of tools for algorithmic Bitcoin trading',
     url='http://github.com/ehickox2012/bitraider',
     author='Eli Hickox',
