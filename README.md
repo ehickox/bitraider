@@ -6,21 +6,25 @@ strategy class that enables you to implement different trading techniques.
 ###Quickstart:
 
 1. `pip install bitraider`
+
 2. Create a new directory in which your trader will reside
 ```
 mkdir example_trader
 cd example_trader
 ```
+
 3. Create an `auth.txt` with your CoinbaseExchange API key, secret, and passphrase on lines 1, 2, and 3 respectively.
 ```
 vim auth.txt
 ```
+
 In auth.txt:
 ```
 MY-API-KEY-HERE
 MY-API-SECRET-HERE
 MY-API-PASSPHRASE-HERE
 ```
+
 4. Create a class that inherits from bitraider.strategy. Implement all necessary functions.
 ```
 from bitraider import strategy as strategy
@@ -31,7 +35,7 @@ from bitraider import strategy as strategy
                 pass
 ```
 
-5 run:
+5. run:
 ```
     bitraider
 ```
