@@ -10,17 +10,17 @@ from cbexchange import CoinbaseExchangeAuth
 from strategy import strategy
 
 class runner():
-    """Runner is a customizable dashboard for retrieval of market data, backtesting strategies,
-    and running strategies on live data."""
+    """Runner is a customizable CLI dashboard for retrieval of market data, backtesting strategies,and running strategies on live data.
+    """
     
     def __init__(self, commands=None, strategy=None):
         """Create a new runner with provided CLI commands. Default commands are:
-        1. exit: quit autotrader
-        2. help: display all commands
-        3. price: display the most recent bitcoin price
-        4. run: start trading on live data
-        5. backtest: run a backtest on historic data
-        6. load: load a new strategy
+        \n1. exit: quit autotrader
+        \n2. help: display all commands
+        \n3. price: display the most recent bitcoin price
+        \n4. run: start trading on live data
+        \n5. backtest: run a backtest on historic data
+        \n6. load: load a new strategy
         """
 
         # Default Commands
@@ -36,6 +36,8 @@ class runner():
         self.commands["backtest"] = "Backtest a strategy with historic data"
 
         self.auth_file = None
+        """Create `auth.txt` to connect to CoinbaseExchange. auth.txt should only contain 3 lines containing your CoinbaseExchange API key, secret, and passphrase on lines 1, 2, and 3 respectively.
+        """
         self.exchange = cb_exchange(None, None, None)
         self.accounts = None
         print("Welcome to bitraider v0.0.3, an algorithmic Bitcoin trader")
@@ -61,16 +63,25 @@ class runner():
 
         # Set up strategy
         self.strategies = []
+        """The currently loaded strategies"""
         if strategy is not None:
             self.strategies.append(strategy)
 
     def print_curr_price(self):
+        """Print the most recent price."""
         print(self.exchange.get_last_trade('BTC-USD')['price'])
 
     def print_all_commands(self):
+        """Print all commands with their descriptions."""
         print('\n'.join(['%s:  %s' % (key, value) for (key, value) in self.commands.items()]))
 
     def load_strategy(self, module, cls):
+        """Load a user-defined strategy from a file.
+
+        \n`module`: the filename in the current directory containing the strategy class which
+        inherits from bitraider.strategy (does not include .py)
+        \n`cls`: the classname within the file to load
+        """
         import_string = module+"."+cls
         _temp = __import__(module)
         loaded_strategy_ = getattr(_temp, cls)

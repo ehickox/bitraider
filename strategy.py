@@ -7,32 +7,49 @@ from datetime import date, datetime, timedelta
 from matplotlib import pyplot as plt
 from cbexchange import cb_exchange as cb_exchange
 from cbexchange import CoinbaseExchangeAuth
+from abc import ABCMeta, abstractmethod
 
-class strategy():
+class strategy(object):
+    """`strategy` defines an abstract base strategy class. Minimum required to create a strategy is a file with a class which inherits from strategy containing a backtest_strategy function. As a bonus, strategy includes utility functions like calculate_historic_data.
+
+    """
+    __metaclass__ = ABCMeta
     
     def __init__(name="default name", interval=5):
-        """Constructor for an abstract strategy. Minimum required to create a strategy is
-        a file with a class which inherits from strategy containing a backtest_strategy function.
-        As a bonus, strategy includes utility functions like calculate_historic_data.
+        """Constructor for an abstract strategy. You can modify it as needed.
 
-        interval -- the amount of time in seconds for each 'tick' default is 5
-        name -- a string name for the strategy
+        \n`interval`: a.k.a timeslice the amount of time in seconds for each 'tick' default is 5
+        \n`name`: a string name for the strategy
         """
         self.name = name
         self.interval = interval
 
+    @abstractmethod
+    def backtest_strategy(self, historical_data, start_usd=5, start_btc=1):
+        """Loop through `historical_data`, a list of lists formated as follows:\n
+        [ 
+            \n\t["2014-11-07 22:19:28.578544+00", "0.32", "4.2", "0.35", "4.2", "12.3"],
+                \n\t\t...
+        \n]
+        \nEach inner list contains:[time, low, high, open, close]
+
+        This method should loop through historical_data, making buy or sell decisions based on available data. You can use the static utility methods in strategy to assist you. You should also format this method to accept:
+        \n`start_usd`: the starting amount of USD for this simulation
+        \n`start_btc`: the starting amount of BTC for this simulation
+        """
+        return
+
     @staticmethod
     def calculate_historic_data(data, pivot):
         """Returns average price weighted according to volume, and the number of bitcoins traded
-            above and below a price point, called a pivot.
+            above and below a price point, called a pivot.\n
         
-        pivot -- the price used for returning volume above and below
-        data -- a list of lists formated as follows [time, low, high, open, close]
-        [
-            ["2014-11-07 22:19:28.578544+00", "0.32", "4.2", "0.35", "4.2", "12.3"],
-                ...
-        ] 
-
+        \npivot: the price used for returning volume above and below
+        \ndata: a list of lists formated as follows [time, low, high, open, close]
+        \n[
+            \n\t["2014-11-07 22:19:28.578544+00", "0.32", "4.2", "0.35", "4.2", "12.3"],
+                \n\t\t...
+        \n]
         """
         price_list = []
         weights = []

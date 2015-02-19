@@ -6,7 +6,7 @@ Exchange API wrapper, a CLI dashboard for backtesting or running a trader, and a
 strategy object that enables you to implement different trading techniques.
 ###Quickstart:
 Create an object that inherits from strategy. Implement all necessary functions. For Example:
-    #!python
+    
     from bitraider import strategy as strategy
     class my_strategy(strategy):
         def backtest_strategy():

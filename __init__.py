@@ -43,3 +43,4 @@ __version__ = '0.0.3'
      
 __author__ = 'Eli Hickox <liquidchickenman.blogspot.com>' 
 """The author of bitraider""" 
+
