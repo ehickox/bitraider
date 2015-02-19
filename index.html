@@ -56,7 +56,7 @@
 <h1>Welcome to bitraider&#8217;s documentation!<a class="headerlink" href="#welcome-to-bitraider-s-documentation" title="Permalink to this headline">¶</a></h1>
 <p>A Library of tools for algorithmic Bitcoin trading in Python. Bitraider includes a Coinbase
 Exchange API wrapper, a CLI dashboard for backtesting or running a trader, and an abstract
-strategy object that enables you to implement different trading techniques.</p>
+strategy class that enables you to implement different trading techniques.</p>
 <div class="section" id="quickstart">
 <h2>Quickstart:<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h2>
 <p>1:</p>
@@ -80,7 +80,7 @@ strategy object that enables you to implement different trading techniques.</p>
 <span class="n">MY</span><span class="o">-</span><span class="n">API</span><span class="o">-</span><span class="n">PASSPHRASE</span><span class="o">-</span><span class="n">HERE</span>
 </pre></div>
 </div>
-<p>4. Create a class in a Python file that inherits from strategy. Implement all necessary functions. For Example:</p>
+<p>4. Create an object that inherits from strategy. Implement all necessary functions. For Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">bitraider</span> <span class="kn">import</span> <span class="n">strategy</span> <span class="k">as</span> <span class="n">strategy</span>
 
 <span class="k">class</span> <span class="nc">my_strategy</span><span class="p">(</span><span class="n">strategy</span><span class="p">):</span>
