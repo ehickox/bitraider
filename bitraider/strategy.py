@@ -5,8 +5,8 @@ import time
 import numpy
 from datetime import date, datetime, timedelta
 from matplotlib import pyplot as plt
-from cbexchange import cb_exchange as cb_exchange
-from cbexchange import CoinbaseExchangeAuth
+from exchange import cb_exchange as cb_exchange
+from exchange import CoinbaseExchangeAuth
 from abc import ABCMeta, abstractmethod
 
 class strategy(object):
@@ -14,7 +14,7 @@ class strategy(object):
 
     """
     __metaclass__ = ABCMeta
-    
+
     def __init__(name="default name", interval=5):
         """Constructor for an abstract strategy. You can modify it as needed.
 
@@ -23,27 +23,65 @@ class strategy(object):
         """
         self.name = name
         self.interval = interval
+        self.times_recalculated = 0
 
     @abstractmethod
-    def backtest_strategy(self, historical_data, start_usd=5, start_btc=1):
-        """Loop through `historical_data`, a list of lists formated as follows:\n
-        [ 
-            \n\t["2014-11-07 22:19:28.578544+00", "0.32", "4.2", "0.35", "4.2", "12.3"],
-                \n\t\t...
-        \n]
-        \nEach inner list contains:[time, low, high, open, close]
+    def trade(self, timeslice):
+        """Perform operations on a timeslice.
 
-        \nThis method should loop through historical_data, making buy or sell decisions based on available data. You can use the static utility methods in strategy to assist you. You should also format this method to accept:
-        \n`start_usd`: the starting amount of USD for this simulation
-        \n`start_btc`: the starting amount of BTC for this simulation
+        \n`timeslice`: a section of trade data with time length equal to the strategy's interval, formatted as follows:
+        \n[time, low, high, open, close, volume]
         """
         return
+
+    def backtest_strategy(self, historic_data):
+        """Returns performance of a strategy vs market performance.
+        """
+        # Reverse the data since Coinbase returns it in reverse chronological
+        # now historic_data strarts with the oldest entry
+        historic_data = list(reversed(historic_data))
+        earliest_time = float(historic_data[0][0])
+        latest_time = float(historic_data[-1][0])
+        start_price = float(historic_data[0][4])
+        end_price = float(historic_data[-1][4])
+        market_performance = ((end_price-start_price)/start_price)*100
+
+        print("Running simulation on historic data. This may take some time....")
+        for timeslice in historic_data:
+            # Display what percent through the data we are
+            idx = historic_data.index(timeslice)
+            percent = (float(idx)/float(len(historic_data)))*100 + 1
+            sys.stdout.write("\r%d%%" % percent)
+            sys.stdout.flush()
+
+            self.trade(timeslice)
+
+        # Calculate performance
+        end_amt_no_trades = (float(self.exchange.start_usd)/float(end_price)) + float(self.exchange.start_btc)
+        end_amt = (float(self.exchange.usd_bal)/float(end_price)) + float(self.exchange.btc_bal)
+        start_amt = (float(self.exchange.start_usd)/float(start_price)) + float(self.exchange.start_btc)
+        strategy_performance = ((end_amt-start_amt)/start_amt)*100
+        print("\n")
+        print("Times recalculated: "+str(self.times_recalculated))
+        print("Times bought: "+str(self.exchange.times_bought))
+        print("Times sold: "+str(self.exchange.times_sold))
+        print("The Market's performance: "+str(market_performance)+" %")
+        print("Strategy's performance: "+str(strategy_performance)+" %")
+        print("Account's ending value if no trades were made: "+str(start_amt)+" BTC")
+        print("Account's ending value with this strategy: "+str(end_amt)+" BTC")
+        strategy_performance_vs_market = strategy_performance - market_performance
+        if strategy_performance > market_performance:
+            print("Congratulations! This strategy has beat the market by: "+str(strategy_performance_vs_market)+" %")
+        elif strategy_performance < market_performance:
+            print("This strategy has preformed: "+str(strategy_performance_vs_market)+" % worse than market.")
+
+        return strategy_performance_vs_market, strategy_performance, market_performance
 
     @staticmethod
     def calculate_historic_data(data, pivot):
         """Returns average price weighted according to volume, and the number of bitcoins traded
             above and below a price point, called a pivot.\n
-        
+
         \npivot: the price used for returning volume above and below
         \ndata: a list of lists formated as follows [time, low, high, open, close]
         \n[
@@ -64,7 +102,7 @@ class strategy(object):
                 max_prie = timeslice[2]
             if min_price > timeslice[1]:
                 min_price = timeslice[1]
-            
+
             closing_price = timeslice[4]
             volume = timeslice[5]
             if closing_price not in discrete_prices.keys():
@@ -79,7 +117,7 @@ class strategy(object):
         fltprices = [float(i) for i in discrete_prices.keys()]
         fltvolumes = [float(i) for i in discrete_prices.values()]
         np_discrete_prices = numpy.array(fltprices)
-        np_volume_per_price = numpy.array(fltvolumes) 
+        np_volume_per_price = numpy.array(fltvolumes)
         weighted_avg = numpy.average(np_discrete_prices, weights=np_volume_per_price)
         num_above = 0
         num_below = 0
