@@ -4,6 +4,9 @@ eli_strategy.py
 # Ignore personal authentication
 auth.txt
 
+# Ignore local configuration
+settings.ini
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
