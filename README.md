@@ -15,11 +15,15 @@ strategy class that enables you to implement different trading techniques.
 
 4. Create a class that inherits from bitraider.strategy. Implement all necessary functions.
     ```
+    vim mystrategy.py
+    ```
+
+    ```
     from bitraider import strategy as strategy
 
         class my_strategy(strategy):
 
-            def __init():
+            def __init__():
                 self.usd_bal = 1000
                 self.other_attributes = 999
 
