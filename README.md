@@ -1,5 +1,5 @@
 # bitraider
-A Library of tools for algorithmic Bitcoin trading in Python. Bitraider includes a Coinbase 
+A Library of tools for algorithmic Bitcoin trading in Python. Bitraider includes a Coinbase
 Exchange API wrapper, a CLI dashboard for backtesting or running a trader, and an abstract
 strategy class that enables you to implement different trading techniques.
 
@@ -13,26 +13,19 @@ strategy class that enables you to implement different trading techniques.
     $cd example_trader
     ```
 
-3. Create an `auth.txt` with your CoinbaseExchange API key, secret, and passphrase on lines 1, 2, and 3 respectively.
-    ```
-    $vim auth.txt
-    ```
-
-    In auth.txt:
-    ```
-    MY-API-KEY-HERE
-    MY-API-SECRET-HERE
-    MY-API-PASSPHRASE-HERE
-    ```
-
 4. Create a class that inherits from bitraider.strategy. Implement all necessary functions.
     ```
     from bitraider import strategy as strategy
-        
+
         class my_strategy(strategy):
-            def backtest_strategy(self, historical_data, start_btc, start_usd):
-                for timeslice in historical_data:
-                    pass
+
+            def __init():
+                self.usd_bal = 1000
+                self.other_attributes = 999
+
+            def trade(self, timeslice):
+                # This will get run in a loop for each timeslice
+                pass
     ```
 
 5. `$bitraider`
@@ -46,6 +39,8 @@ The bitraider package contains the following subpackages
 
 TODO:
 ======
-1. Implement logic for actual trades, not just backtesting
-2. Implement flow for creating an auth.txt within the CLI
-3. Sanitize inputs better
+1. Sanitize inputs better
+2. Make cb_exchange inherit from abstract exchange
+3. Update CLI to python cmd
+4. Implement logging with python logging
+5. Implement emailer
