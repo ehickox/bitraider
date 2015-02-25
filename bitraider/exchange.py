@@ -13,6 +13,7 @@ class exchange(object):
         pass
 
 class cb_exchange_sim(exchange):
+    """Class used for backtesting"""
 
     def __init__(self, start_btc, start_usd):
         self.start_usd = start_usd
@@ -108,7 +109,8 @@ class CoinbaseExchangeAuth(AuthBase):
             })
         return request
 
-class cb_exchange():
+class cb_exchange(exchange):
+    """CoinbaseExchange API Wrapper"""
 
     def __init__(self, key=None, secret=None, password=None):
         self.key=key

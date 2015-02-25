@@ -23,7 +23,7 @@ strategy class that enables you to implement different trading techniques.
 
         class my_strategy(strategy):
 
-            def __init__():
+            def __init__(self):
                 self.usd_bal = 1000
                 self.other_attributes = 999
 
