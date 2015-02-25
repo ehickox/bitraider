@@ -67,7 +67,7 @@ class strategy(object):
         print("Times sold: "+str(self.exchange.times_sold))
         print("The Market's performance: "+str(market_performance)+" %")
         print("Strategy's performance: "+str(strategy_performance)+" %")
-        print("Account's ending value if no trades were made: "+str(start_amt)+" BTC")
+        print("Account's ending value if no trades were made: "+str(end_amt_no_trades)+" BTC")
         print("Account's ending value with this strategy: "+str(end_amt)+" BTC")
         strategy_performance_vs_market = strategy_performance - market_performance
         if strategy_performance > market_performance:

@@ -14,6 +14,8 @@ strategy class that enables you to implement different trading techniques.
     ```
 
 4. Create a class that inherits from bitraider.strategy. Implement all necessary functions.
+NOTE: See `example_strategy.py` for a more thurough example.
+
     ```
     vim mystrategy.py
     ```
@@ -43,8 +45,5 @@ The bitraider package contains the following subpackages
 
 TODO:
 ======
-1. Sanitize inputs better
-2. Make cb_exchange inherit from abstract exchange
-3. Update CLI to python cmd
-4. Implement logging with python logging
-5. Implement emailer
+1. Implement logging with python logging
+2. Implement emailer

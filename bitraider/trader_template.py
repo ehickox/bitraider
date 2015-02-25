@@ -42,7 +42,7 @@ class runner(cmd.Cmd):
             print(str(err))
 
         # Set up strategy
-        self.strategies = []
+        self.strategies = {}
         """The currently loaded strategies"""
 
         # Try to load a default strategy, if one exists
@@ -152,62 +152,197 @@ class runner(cmd.Cmd):
                 print("Type the name of the class within "+str(option)+" representing the strategy to load:")
                 option = raw_input("> ")
                 loaded_strategy = str(option)
+                if self.strategies is not None:
+                    if loaded_strategy in self.strategies.keys():
+                        print("Error: "+loaded_strategy+" is already loaded")
+                        option = raw_input("> ")
+                        loaded_strategy = str(option)
+
                 self.config.set("default_strategy", "class", loaded_strategy)
                 with open(self.config_path, "wb") as config_file:
                     self.config.write(config_file)
                 self.load_strategy(filename, loaded_strategy)
 
     def do_load(self, option):
-            print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
-            input = raw_input("> ")
-            filename = str(input)
-            print("Type the name of the class within "+str(input)+" representing the strategy to load:")
-            input = raw_input("> ")
-            loaded_strategy = str(input)
-            self.load_strategy(filename, loaded_strategy)
+        print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
+        input = raw_input("> ")
+        filename = str(input)
+        print("Type the name of the class within "+str(input)+" representing the strategy to load:")
+        input = raw_input("> ")
+        loaded_strategy = str(input)
+        self.load_strategy(filename, loaded_strategy)
 
     def do_backtest(self, option):
-            usd = 1000
-            btc = 1
-            days_back_in_time = 7
-            print("Enter the number of days back in time to backtest on: ")
-            input = raw_input("> ")
-            if input == "":
-                print("Performing backtest on default of 7 days.")
-            else:
-                days_back_in_time = float(input)
-                print("Performing backtest on last "+str(days_back_in_time)+" days.")
+        strategy_to_backtest = ""
+        print("Enter the class name of the strategy to backtest, or press enter to\n"
+                "backtest on the default strategy.")
+        input = raw_input("> ")
+        if input == "":
+            print("Performing backest on default strategy: "+str(self.config.get("default_strategy" ,"class")))
+            strategy_to_backtest = str(self.config.get("default_strategy", "class"))
+        else:
+            strategy_to_backtest = str(input)
 
-            curr_time = datetime.now(tz=self.curr_timezone)
-            start_time = curr_time - timedelta(seconds=86400*days_back_in_time)
-            start_time = start_time.isoformat(' ')
-            end_time = curr_time.isoformat(' ')
-            print("Enter the initial USD amount:")
-            input = raw_input("> ")
-            if input == "":
-                print("Using default starting USD amount of $1,000")
-            else:
-                usd = float(input)
-                print("Using starting USD amount of $"+str(usd))
+        usd = 1000
+        btc = 1
+        days_back_in_time = 7
+        print("Enter the number of days back in time to backtest on: ")
+        input = raw_input("> ")
+        if input == "":
+            print("Performing backtest on default of 7 days.")
+        else:
+            days_back_in_time = float(input)
+            print("Performing backtest on last "+str(days_back_in_time)+" days.")
 
-            print("Enter the initial BTC amount:")
-            input = raw_input("> ")
-            if input == "":
-                print("Using default starting BTC amount of 1")
-            else:
-                btc = float(input)
-                print("Using starting BTC amount of "+str(btc))
+        curr_time = datetime.now(tz=self.curr_timezone)
+        start_time = curr_time - timedelta(seconds=86400*days_back_in_time)
+        start_time = start_time.isoformat(' ')
+        end_time = curr_time.isoformat(' ')
+        print("Enter the initial USD amount:")
+        input = raw_input("> ")
+        if input == "":
+            print("Using default starting USD amount of $1,000")
+        else:
+            usd = float(input)
+            print("Using starting USD amount of $"+str(usd))
 
-            self.strategies[0].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
-            historic_data = self.strategies[0].exchange.get_historic_rates(start_time=start_time, end_time=end_time, granularity=self.strategies[0].interval)
+        print("Enter the initial BTC amount:")
+        input = raw_input("> ")
+        if input == "":
+            print("Using default starting BTC amount of 1")
+        else:
+            btc = float(input)
+            print("Using starting BTC amount of "+str(btc))
+
+        if strategy_to_backtest is not "":
+            self.strategies[strategy_to_backtest].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
+            historic_data = self.strategies[strategy_to_backtest].exchange.get_historic_rates(start_time=start_time, end_time=end_time, granularity=self.strategies[strategy_to_backtest].interval)
             if type(historic_data) is not list:
                 print("API error: "+str(historic_data.get("message", "")))
                 print("Unable to backtest")
                 pass
             else:
                 print("Backtesting from "+str(start_time)+" to "+str(end_time))
-                print("with "+str(len(historic_data))+" timeslices of length "+str(self.strategies[0].interval)+" seconds each")
-                self.strategies[0].backtest_strategy(historic_data)
+                print("with "+str(len(historic_data))+" timeslices of length "+str(self.strategies[strategy_to_backtest].interval)+" seconds each")
+                self.strategies[strategy_to_backtest].backtest_strategy(historic_data)
+
+    def do_optimize(self, line):
+        usd = 1000
+        btc = 1
+        days_back_in_time = 7
+        print("Enter the class name of the strategy to be optimized:")
+        input = raw_input("> ")
+        print(self.strategies.keys())
+        if input not in self.strategies.keys():
+            print("Error: not found")
+            pass
+        strategy_to_optimize = input
+
+        print("Enter the timeframe to optimize for i.e. the time to simulate over:")
+        days_back_in_time = 7
+        input = raw_input("> ")
+        if input == "":
+            print("Performing optimization for default of last 7 days.")
+        else:
+            days_back_in_time = float(input)
+            print("Performing optimization based on last "+str(days_back_in_time)+" days.")
+
+        curr_time = datetime.now(tz=self.curr_timezone)
+        start_time = curr_time - timedelta(seconds=86400*days_back_in_time)
+        start_time = start_time.isoformat(' ')
+        end_time = curr_time.isoformat(' ')
+        print("Enter the initial USD amount:")
+        input = raw_input("> ")
+        if input == "":
+            print("Using default starting USD amount of $1,000")
+        else:
+            usd = float(input)
+            print("Using starting USD amount of $"+str(usd))
+
+        print("Enter the initial BTC amount:")
+        input = raw_input("> ")
+        if input == "":
+            print("Using default starting BTC amount of 1")
+        else:
+            btc = float(input)
+            print("Using starting BTC amount of "+str(btc))
+
+        strategy = strategy_to_optimize
+        strategy_attributes = dir(self.strategies[strategy])
+        bounds_by_attribute = {}
+        print("Note: strategy interval cannot be optimized due to API restraints")
+
+        self.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
+        historic_data = self.strategies[strategy].exchange.get_historic_rates(start_time=start_time, end_time=end_time, granularity=self.strategies[strategy].interval)
+        if type(historic_data) is not list:
+            print("API error: "+str(historic_data.get("message", "")))
+            print("Unable to optimize. Try changing strategy's interval")
+            pass
+        else:
+            print("Optimizing based on time frame of "+str(start_time)+" to "+str(end_time))
+            print("with "+str(len(historic_data))+" timeslices of length "+str(self.strategies[strategy].interval)+" seconds each")
+
+        for attribute in strategy_attributes:
+            if "_" not in str(attribute) and str(attribute) != "interval":
+                # Optimizing for interval would poll API too frequently
+                print("Enter the lower bound for attribute: "+str(attribute)+", or press enter to skip:")
+                input = raw_input("> ")
+                if input == "":
+                    pass
+                else:
+                    lower_bound = float(input)
+                    print("Enter the upper bound for attribute: "+str(attribute)+":")
+                    input = raw_input("> ")
+                    upper_bound = float(input)
+                    print("Enter the granularity of this attribute i.e. how many different values to try:")
+                    input = raw_input("> ")
+                    granularity = float(input)
+                    if upper_bound is not None and lower_bound is not None:
+                        bounds_by_attribute[str(attribute)] = {"lower":lower_bound, "upper":upper_bound, "granularity":granularity}
+                        #self.strategies[strategy][attribute] = float(lower_bound)
+
+        attribute_vals_by_id = {}
+        config_id = 0
+        # Initialize attribute_vals_by id
+        for attribute in bounds_by_attribute.keys():
+            num_shades_of_attr = int(bounds_by_attribute[attribute].get("granularity"))
+            increment = (float(upper_bound) - float(lower_bound))/num_shades_of_attr
+            attr_val = float(lower_bound)
+            for shade in range(num_shades_of_attr):
+                attribute_vals_by_id[str(config_id)] = {}
+                attribute_vals_by_id[str(config_id)][attribute] = attr_val
+                config_id += 1
+
+        # Fill in all possible values for the attributes
+        config_id = 0
+        for attribute in bounds_by_attribute.keys():
+            num_shades_of_attr = int(bounds_by_attribute[attribute].get("granularity"))
+            increment = (float(upper_bound) - float(lower_bound))/num_shades_of_attr
+            step = 0
+            attr_val = float(lower_bound) + (increment*step)
+            for shade in range(num_shades_of_attr):
+                attribute_vals_by_id[str(config_id)][attribute] = attr_val
+                config_id += 1
+                step += 1
+
+        performance_by_id = {}
+        performance_vs_mkt = 0
+        strategy_performance = 0
+        mkt_performance = 0
+        # Change the attribute values for this strategy, updating when the performance is highest
+        for configuration in attribute_vals_by_id.keys():
+            for attribute in attribute_vals_by_id[configuration]:
+                setattr(self.strategies[strategy], attribute, attribute_vals_by_id[configuration][attribute])
+                performance_vs_mkt, strategy_performance, mkt_performance = self.strategies[strategy].backtest_strategy(historic_data)
+                performance_by_id[str(configuration)] = performance_vs_mkt
+
+        best_config = "0"
+        for configuration in performance_by_id.keys():
+            if performance_by_id[configuration] > performance_by_id[best_config]:
+                best_config = configuration
+
+        print("The best performing strategy configuration is: "+str(attribute_vals_by_id[best_config]))
+        print("With a performance vs market of: "+str(performance_by_id[best_config]))
 
     # End python cmd funtions
 
@@ -220,6 +355,7 @@ class runner(cmd.Cmd):
             print("Error! Only unauthorized endpoints are available.")
             print("error: "+str(err))
             print("If you would like bitraider to walk you through authentication, enter the commands: \'config\' > \'auth\'")
+
 
     def set_ticker_on(self):
         strategy = self.strategies[0]
@@ -285,11 +421,16 @@ class runner(cmd.Cmd):
         \n`cls`: the classname within the file to load
         """
         import_string = module+"."+cls
+        classname = str(cls)
         _temp = __import__(module)
         loaded_strategy_ = getattr(_temp, cls)
         instance_of_loaded_strategy = loaded_strategy_()
-        self.strategies.append(instance_of_loaded_strategy)
+        self.strategies[classname] = instance_of_loaded_strategy
         print("Loaded strategy: "+str(cls)+" from file: "+str(module)+".py")
+
+def run():
+    my_runner = runner()
+    my_runner.run()
 
 if __name__=="__main__":
     my_runner = runner()
