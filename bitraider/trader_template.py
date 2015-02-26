@@ -83,7 +83,21 @@ class runner(cmd.Cmd):
                 try:
                     print("Account ID: "+str(self.accounts[i]['id'])+" Available Funds: "+str(self.accounts[i]['available'])+" "+str(self.accounts[i]['currency'])+"")
                 except Exception, err:
-                    print("Something went wrong while trying to authenticate with the provided credentials. Try running config>auth again.")
+                    print("Something went wrong while trying to authenticate \nwith the provided credentials. Try running config auth again.")
+
+        # Default number of folds:
+        self.num_folds = 1
+        # Try to load optimization and cross-validation settings
+        try:
+            self.num_folds = int(self.config.get("optimize", "folds"))
+        except Exception, err:
+            #print(str(err))
+            print("No optimization settings found. Run "
+                    "\'config optimize\' to set them")
+            try:
+                self.config.add_section("optimize")
+            except:
+                pass
 
     def do_exit(self, line):
         sys.exit()
@@ -100,7 +114,7 @@ class runner(cmd.Cmd):
     def do_config(self, option):
         """usage: \'config \' [option]"""
 
-        if option is None:
+        if option == "":
             print("error: no cofiguration option specified")
         else:
             if option == "auth":
@@ -162,6 +176,14 @@ class runner(cmd.Cmd):
                 with open(self.config_path, "wb") as config_file:
                     self.config.write(config_file)
                 self.load_strategy(filename, loaded_strategy)
+
+            elif option == "optimize":
+                print("Type the number of folds to be used for cross-validation:")
+                option = raw_input("> ")
+                self.num_folds = int(option)
+                self.config.set("optimize", "folds", self.num_folds)
+                with open(self.config_path, "wb") as config_file:
+                    self.config.write(config_file)
 
     def do_load(self, option):
         print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
@@ -232,25 +254,22 @@ class runner(cmd.Cmd):
         days_back_in_time = 7
         print("Enter the class name of the strategy to be optimized:")
         input = raw_input("> ")
-        print(self.strategies.keys())
         if input not in self.strategies.keys():
-            print("Error: not found")
-            pass
+            print("Error: not found. Exiting to main menu")
+            return
         strategy_to_optimize = input
+        strategy = strategy_to_optimize
 
         print("Enter the timeframe to optimize for i.e. the time to simulate over:")
+        print("Current cross-validation settings are set for: "+str(self.num_folds)+" fold(s)")
         days_back_in_time = 7
         input = raw_input("> ")
         if input == "":
-            print("Performing optimization for default of last 7 days.")
+            print("Performing optimization for default of 7 days.")
         else:
             days_back_in_time = float(input)
-            print("Performing optimization based on last "+str(days_back_in_time)+" days.")
+            print("Performing optimization based on  "+str(days_back_in_time)+" days.")
 
-        curr_time = datetime.now(tz=self.curr_timezone)
-        start_time = curr_time - timedelta(seconds=86400*days_back_in_time)
-        start_time = start_time.isoformat(' ')
-        end_time = curr_time.isoformat(' ')
         print("Enter the initial USD amount:")
         input = raw_input("> ")
         if input == "":
@@ -267,20 +286,29 @@ class runner(cmd.Cmd):
             btc = float(input)
             print("Using starting BTC amount of "+str(btc))
 
-        strategy = strategy_to_optimize
+        self.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
+        historic_data = []
+        curr_time = datetime.now(tz=self.curr_timezone)
+
+        for fold in range(self.num_folds):
+            start_time_sec = curr_time - timedelta(seconds=86400*days_back_in_time)
+            start_time = start_time_sec.isoformat(' ')
+            end_time = curr_time.isoformat(' ')
+            curr_time = start_time_sec
+            fold_data = self.strategies[strategy].exchange.get_historic_rates(start_time=start_time, end_time=end_time, granularity=self.strategies[strategy].interval)
+            if type(fold_data) is not list:
+                print("API error: "+str(fold_data.get("message", "")))
+                print("Unable to optimize. Try changing strategy's interval")
+                pass
+            else:
+                print("Optimizing for fold based on time frame of "+str(start_time)+" to "+str(end_time))
+                print("with "+str(len(fold_data))+" timeslices of length "+str(self.strategies[strategy].interval)+" seconds each")
+                historic_data.append(fold_data)
+
         strategy_attributes = dir(self.strategies[strategy])
         bounds_by_attribute = {}
         print("Note: strategy interval cannot be optimized due to API restraints")
 
-        self.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
-        historic_data = self.strategies[strategy].exchange.get_historic_rates(start_time=start_time, end_time=end_time, granularity=self.strategies[strategy].interval)
-        if type(historic_data) is not list:
-            print("API error: "+str(historic_data.get("message", "")))
-            print("Unable to optimize. Try changing strategy's interval")
-            pass
-        else:
-            print("Optimizing based on time frame of "+str(start_time)+" to "+str(end_time))
-            print("with "+str(len(historic_data))+" timeslices of length "+str(self.strategies[strategy].interval)+" seconds each")
 
         for attribute in strategy_attributes:
             if "_" not in str(attribute) and str(attribute) != "interval":
@@ -318,31 +346,53 @@ class runner(cmd.Cmd):
         for attribute in bounds_by_attribute.keys():
             num_shades_of_attr = int(bounds_by_attribute[attribute].get("granularity"))
             increment = (float(upper_bound) - float(lower_bound))/num_shades_of_attr
-            step = 0
-            attr_val = float(lower_bound) + (increment*step)
             for shade in range(num_shades_of_attr):
+                attr_val = float(lower_bound) + (increment*int(shade))
                 attribute_vals_by_id[str(config_id)][attribute] = attr_val
                 config_id += 1
-                step += 1
 
-        performance_by_id = {}
+        performance_by_id_by_fold = {}
         performance_vs_mkt = 0
         strategy_performance = 0
         mkt_performance = 0
-        # Change the attribute values for this strategy, updating when the performance is highest
-        for configuration in attribute_vals_by_id.keys():
-            for attribute in attribute_vals_by_id[configuration]:
-                setattr(self.strategies[strategy], attribute, attribute_vals_by_id[configuration][attribute])
-                performance_vs_mkt, strategy_performance, mkt_performance = self.strategies[strategy].backtest_strategy(historic_data)
-                performance_by_id[str(configuration)] = performance_vs_mkt
+        for fold in historic_data:
+            # Change the attribute values for this strategy, updating when the performance is highest
+            fold_id = str(historic_data.index(fold))
+            performance_by_id_by_fold[fold_id] = {}
+            for configuration in attribute_vals_by_id.keys():
+                print("Backtesting with strategy configuration: "+str(attribute_vals_by_id[configuration]))
+                for attribute in attribute_vals_by_id[configuration]:
+                    setattr(self.strategies[strategy], attribute, attribute_vals_by_id[configuration][attribute])
+                # Once all the attributes are set, perform backtest for this config
+                performance_vs_mkt, strategy_performance, mkt_performance = self.strategies[strategy].backtest_strategy(fold)
+                performance_by_id_by_fold[fold_id][str(configuration)] = performance_vs_mkt
 
-        best_config = "0"
-        for configuration in performance_by_id.keys():
-            if performance_by_id[configuration] > performance_by_id[best_config]:
-                best_config = configuration
+        # Find the best config in each fold, then average the attribute values
+        fold_bests = {}
+        for fold_id in performance_by_id_by_fold.keys():
+            best_config = "0"
+            for config in performance_by_id_by_fold[fold_id]:
+                if performance_by_id_by_fold[fold_id][config] > performance_by_id_by_fold[fold_id][best_config]:
+                    best_config = config
+                    fold_bests[fold_id] = best_config
 
-        print("The best performing strategy configuration is: "+str(attribute_vals_by_id[best_config]))
-        print("With a performance vs market of: "+str(performance_by_id[best_config]))
+        totals = {}
+        for fold_id in fold_bests.keys():
+            for attr in attribute_vals_by_id[fold_bests[fold_id]].keys():
+                value = attribute_vals_by_id[fold_bests[fold_id]][attr]
+                if attr not in totals.keys():
+                    totals[attr] = value
+                else:
+                    totals[attr] += value
+
+        averages = totals
+        for key in totals.keys():
+            value = totals[key]
+            averages[key] = value/self.num_folds
+
+
+        print("The best performing strategy configuration is: "+str(averages))
+        #print("With a performance vs market of: "+str(performance_by_id[best_config]))
 
     # End python cmd funtions
 

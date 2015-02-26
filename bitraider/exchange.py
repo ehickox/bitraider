@@ -57,9 +57,12 @@ class cb_exchange_sim(exchange):
             'product_id': product_id,
         }
         size = float(size)
-        currprice = float(self.get_last_trade(product_id).get("price"))
+        currprice = 0
         if historic_timeslice is not None:
             currprice = float(historic_timeslice[4])
+        else:
+            currprice = float(self.get_last_trade(product_id).get("price"))
+            
         if side == "buy":
             if self.usd_bal >= (size*price):
                 if currprice <= price:
