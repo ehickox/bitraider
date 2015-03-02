@@ -4,6 +4,10 @@ import time
 import calendar
 import ConfigParser
 import cmd
+import itertools
+import smtplib
+from email.MIMEText import MIMEText
+from email.MIMEMultipart import MIMEMultipart
 from datetime import date, datetime, timedelta
 from strategy import strategy
 from exchange import cb_exchange_sim, cb_exchange
@@ -78,12 +82,12 @@ class runner(cmd.Cmd):
                 pass
 
         if self.accounts is not None:
-            print(str(len(self.accounts))+" accounts were found.")
+            print(str(len(self.accounts))+" account(s) were found.")
             for i in range(0, len(self.accounts)):
                 try:
                     print("Account ID: "+str(self.accounts[i]['id'])+" Available Funds: "+str(self.accounts[i]['available'])+" "+str(self.accounts[i]['currency'])+"")
                 except Exception, err:
-                    print("Something went wrong while trying to authenticate \nwith the provided credentials. Try running config auth again.")
+                    print("Something went wrong while trying to authenticate \nwith the provided credentials. Try running \'config auth\' again.")
 
         # Default number of folds:
         self.num_folds = 1
@@ -96,6 +100,26 @@ class runner(cmd.Cmd):
                     "\'config optimize\' to set them")
             try:
                 self.config.add_section("optimize")
+            except:
+                pass
+
+        # Try to load emailer settings
+        self.email = False
+        try:
+            self.email_server = smtplib.SMTP('smtp.gmail.com:587')
+            self.email_user = self.config.get("email", "username")
+            self.email_pass = self.config.get("email", "password")
+            self.email_dest = self.config.get("email", "destination")
+            self.email_server.ehlo()
+            self.email_server.starttls()
+            self.email_server.login(self.email_user, self.email_pass)
+            self.email = True
+        except Exception, err:
+            print(str(err))
+            print("No emailer settings found. Run "
+                    "\'config email\' to set them")
+            try:
+                self.config.add_section("email")
             except:
                 pass
 
@@ -184,6 +208,34 @@ class runner(cmd.Cmd):
                 self.config.set("optimize", "folds", self.num_folds)
                 with open(self.config_path, "wb") as config_file:
                     self.config.write(config_file)
+
+            elif option == "email":
+                print("Type your gmail email: ")
+                option = raw_input("> ")
+                self.email_user = str(option)
+                self.config.set("email", "username", self.email_user)
+                print("Type your gmail password: ")
+                option = raw_input("> ")
+                self.email_pass = str(option)
+                self.email_server = smtplib.SMTP('smtp.gmail.com:587')
+                self.config.set("email", "password", self.email_pass)
+                try:
+                    self.email_server.ehlo()
+                    self.email_server.starttls()
+                    self.email_server.login(self.email_user, self.email_pass)
+                except Exception, err:
+                    print(str(err))
+                    print("Something went wrong while logging in using the provided "
+                            "credentials. Try again.")
+                    return
+                print("Type the destination email: ")
+                option = raw_input("> ")
+                self.email_dest = str(option)
+                self.config.set("email", "destination", self.email_dest)
+                self.email = True
+                with open(self.config_path, "wb") as config_file:
+                    self.config.write(config_file)
+
 
     def do_load(self, option):
         print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
@@ -309,9 +361,8 @@ class runner(cmd.Cmd):
         bounds_by_attribute = {}
         print("Note: strategy interval cannot be optimized due to API restraints")
 
-
         for attribute in strategy_attributes:
-            if "_" not in str(attribute) and str(attribute) != "interval":
+            if "__" not in str(attribute) and "_abc" not in str(attribute) and str(attribute) != "interval":
                 # Optimizing for interval would poll API too frequently
                 print("Enter the lower bound for attribute: "+str(attribute)+", or press enter to skip:")
                 input = raw_input("> ")
@@ -329,43 +380,59 @@ class runner(cmd.Cmd):
                         bounds_by_attribute[str(attribute)] = {"lower":lower_bound, "upper":upper_bound, "granularity":granularity}
                         #self.strategies[strategy][attribute] = float(lower_bound)
 
+        possible_vals_by_attr = {}
         attribute_vals_by_id = {}
         config_id = 0
         # Initialize attribute_vals_by id
         for attribute in bounds_by_attribute.keys():
+            upper_bound = bounds_by_attribute[attribute]["upper"]
+            lower_bound = bounds_by_attribute[attribute]["lower"]
             num_shades_of_attr = int(bounds_by_attribute[attribute].get("granularity"))
             increment = (float(upper_bound) - float(lower_bound))/num_shades_of_attr
-            attr_val = float(lower_bound)
-            for shade in range(num_shades_of_attr):
-                attribute_vals_by_id[str(config_id)] = {}
-                attribute_vals_by_id[str(config_id)][attribute] = attr_val
-                config_id += 1
+            if attribute not in possible_vals_by_attr.keys():
+                possible_vals_by_attr[attribute] = []
+                for shade in range(num_shades_of_attr):
+                    attr_val = float(lower_bound) + (shade*increment)
+                    possible_vals_by_attr[attribute].append(attr_val)
 
-        # Fill in all possible values for the attributes
+        all_possible_configs = list(self.combinations(possible_vals_by_attr))
         config_id = 0
-        for attribute in bounds_by_attribute.keys():
-            num_shades_of_attr = int(bounds_by_attribute[attribute].get("granularity"))
-            increment = (float(upper_bound) - float(lower_bound))/num_shades_of_attr
-            for shade in range(num_shades_of_attr):
-                attr_val = float(lower_bound) + (increment*int(shade))
-                attribute_vals_by_id[str(config_id)][attribute] = attr_val
-                config_id += 1
+        for config in all_possible_configs:
+            attribute_vals_by_id[str(config_id)] = config
+            config_id += 1
 
         performance_by_id_by_fold = {}
+        mkt_perf_by_fold_id = {}
         performance_vs_mkt = 0
         strategy_performance = 0
         mkt_performance = 0
         for fold in historic_data:
             # Change the attribute values for this strategy, updating when the performance is highest
             fold_id = str(historic_data.index(fold))
+            if self.email == True:
+                # Email when starting a new fold
+                msg = MIMEMultipart()
+                msg['From'] = self.email_user
+                msg['To'] = self.email_dest
+                msg['Subject'] = "bitraider has begun a new fold."
+                body = "bitraider has started processing fold #"+fold_id
+                msg.attach(MIMEText(body, 'plain'))
+                #self.email_server.ehlo()
+                #self.email_server.starttls()
+                #self.email_server.ehlo()
+                text = msg.as_string()
+                self.email_server.sendmail(self.email_user, self.email_dest, text)
             performance_by_id_by_fold[fold_id] = {}
             for configuration in attribute_vals_by_id.keys():
-                print("Backtesting with strategy configuration: "+str(attribute_vals_by_id[configuration]))
+                print("Backtesting with strategy configuration #"+configuration+": "+str(attribute_vals_by_id[configuration]))
+                self.load_strategy(self.module, strategy)
+                self.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
                 for attribute in attribute_vals_by_id[configuration]:
                     setattr(self.strategies[strategy], attribute, attribute_vals_by_id[configuration][attribute])
                 # Once all the attributes are set, perform backtest for this config
                 performance_vs_mkt, strategy_performance, mkt_performance = self.strategies[strategy].backtest_strategy(fold)
-                performance_by_id_by_fold[fold_id][str(configuration)] = performance_vs_mkt
+                performance_by_id_by_fold[fold_id][str(configuration)] = strategy_performance
+                mkt_perf_by_fold_id[fold_id] = mkt_performance
 
         # Find the best config in each fold, then average the attribute values
         fold_bests = {}
@@ -390,11 +457,38 @@ class runner(cmd.Cmd):
             value = totals[key]
             averages[key] = value/self.num_folds
 
+        # Email when done
+        if self.email == True:
+            msg = MIMEMultipart()
+            msg['From'] = self.email_user
+            msg['To'] = self.email_dest
+            msg['Subject'] = "bitraider has finished optimizing "+strategy
+            body = "Here are the best configs with their performances from each fold: \n"
+            for fold_id in fold_bests.keys():
+                body += "Config: "+str(attribute_vals_by_id[fold_bests[fold_id]])+"\n"
+                body += "Strategy performance: "+str(performance_by_id_by_fold[fold_id][fold_bests[fold_id]])+"\n"
+                body += "Market performance: "+str(mkt_perf_by_fold_id[fold_id])+"\n"
+            body += "The optimized configuration is: "+str(averages)+"\n"
+            msg.attach(MIMEText(body, 'plain'))
+            #self.email_server.ehlo()
+            #self.email_server.starttls()
+            #self.email_server.ehlo()
+            text = msg.as_string()
+            self.email_server.sendmail(self.email_user, self.email_dest, text)
 
+        print("Here are the best configs with their performances from each fold: ")
+        for fold_id in fold_bests.keys():
+            print("Config: "+str(attribute_vals_by_id[fold_bests[fold_id]]))
+            print("Strategy performance: "+str(performance_by_id_by_fold[fold_id][fold_bests[fold_id]]))
+            print("Market performance: "+str(mkt_perf_by_fold_id[fold_id]))
         print("The best performing strategy configuration is: "+str(averages))
         #print("With a performance vs market of: "+str(performance_by_id[best_config]))
 
     # End python cmd funtions
+
+    def combinations(self, dicts):
+        """Helper function to find all possible combos of strategy parameters"""
+        return (dict(itertools.izip(dicts, x)) for x in itertools.product(*dicts.itervalues()))
 
     def authenticate(self):
         try:
@@ -471,6 +565,7 @@ class runner(cmd.Cmd):
         \n`cls`: the classname within the file to load
         """
         import_string = module+"."+cls
+        self.module = module # TODO: support more than one module
         classname = str(cls)
         _temp = __import__(module)
         loaded_strategy_ = getattr(_temp, cls)

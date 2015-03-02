@@ -69,7 +69,7 @@ class cb_exchange_sim(exchange):
                     self.usd_bal -= (size*currprice)
                     self.btc_bal += size
                     self.times_bought += 1
-                    print("Buy of: "+str(size)+" BTC made at price: "+str(currprice))
+                    #print("Buy of: "+str(size)+" BTC made at price: "+str(currprice))
                 else:
                     # TODO: put buy in holds
                     pass
@@ -82,7 +82,7 @@ class cb_exchange_sim(exchange):
                     self.usd_bal += (size*currprice)
                     self.btc_bal -= size
                     self.times_sold += 1
-                    print("Sell of: "+str(size)+" BTC made at price: "+str(currprice))
+                    #print("Sell of: "+str(size)+" BTC made at price: "+str(currprice))
                 else:
                     # TODO: put sell in holds
                     pass

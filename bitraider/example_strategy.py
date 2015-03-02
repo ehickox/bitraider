@@ -5,11 +5,11 @@ import sys
 class awesome_strategy(strategy):
 
     def __init__(self, interval=(60*60), time_from_start=86400, buy_amt=0.001, pivot=0.5):
-        self.name = "AwesomeStrategy"
         self.interval=interval
         self.time_from_start=time_from_start
         self.buy_amt=buy_amt
         self.pivot=pivot
+        self.profit_floor = 0.15
         self.exchange = None
         self.has_baseline = False
         self.time_elapsed = 0
@@ -55,7 +55,7 @@ class awesome_strategy(strategy):
                     value_now = purchase[1]*currprice
                     value_then = purchase[1]*purchase[0]
                     profit = value_now - value_then
-                    if profit > 0: # TODO: account for fees as well
+                    if profit > self.profit_floor: # TODO: account for fees as well
                         self.exchange.place_order(currprice, purchase[1], 'sell', 'BTC-USD', historic_timeslice=timeslice)
                         self.purchases.remove(purchase)
 

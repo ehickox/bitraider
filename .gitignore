@@ -1,8 +1,6 @@
 # Ignore personal strategy ;)
+bitraider/eli_strategy.py
 eli_strategy.py
-
-# Ignore personal authentication
-auth.txt
 
 # Ignore local configuration
 bitraider/settings.ini
