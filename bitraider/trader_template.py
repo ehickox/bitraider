@@ -230,6 +230,7 @@ class runner(cmd.Cmd):
                 self.email_dest = str(option)
                 self.config.set("email", "destination", self.email_dest)
                 self.email = True
+                print("bitraider will now email helpful updates regarding data it is processing")
                 with open(self.config_path, "wb") as config_file:
                     self.config.write(config_file)
 
@@ -305,7 +306,7 @@ class runner(cmd.Cmd):
 
         print("WARNING: Optimization can take a LONG time i.e. days or more")
         print("Computational complexity is O(n^a) n = granularity, a = num values "
-                " to optimize.")
+                "to optimize.")
         usd = 1000
         btc = 1
         days_back_in_time = 7
@@ -493,7 +494,15 @@ class runner(cmd.Cmd):
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
         text = msg.as_string()
-        self.email_server.sendmail(fromaddr, toaddr, text)
+        try:
+            self.email_server = smtplib.SMTP('smtp.gmail.com:587')
+            self.email_server.ehlo()
+            self.email_server.starttls()
+            self.email_server.login(self.email_user, self.email_pass)
+            self.email_server.sendmail(fromaddr, toaddr, text)
+        except Exception, err:
+            print("error: email failed")
+            print(str(err))
 
     def combinations(self, dicts):
         """Helper function to find all possible combinations of strategy parameters"""
