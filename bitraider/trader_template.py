@@ -15,14 +15,6 @@ from exchange import cb_exchange_sim, cb_exchange
 class runner(cmd.Cmd):
 
     def __init__(self):
-        """Create a new runner with provided CLI commands. Default commands are:
-        \n1. exit: quit autotrader
-        \n2. help: display all commands
-        \n3. price: display the most recent bitcoin price
-        \n4. run: start trading on live data
-        \n5. backtest: run a backtest on historic data
-        \n6. load: load a new strategy
-        """
 
         print("    __    _ __             _     __         ")
         print("   / /_  (_) /__________ _(_)___/ /__  _____")
@@ -47,7 +39,8 @@ class runner(cmd.Cmd):
 
         # Set up strategy
         self.strategies = {}
-        """The currently loaded strategies"""
+        """The currently loaded strategies with key:classname,
+        value:instance of strategy"""
 
         # Try to load a default strategy, if one exists
         try:
@@ -115,7 +108,7 @@ class runner(cmd.Cmd):
             self.email_server.login(self.email_user, self.email_pass)
             self.email = True
         except Exception, err:
-            print(str(err))
+            #print(str(err))
             print("No emailer settings found. Run "
                     "\'config email\' to set them")
             try:
@@ -124,15 +117,19 @@ class runner(cmd.Cmd):
                 pass
 
     def do_exit(self, line):
+        """Quit bitraider"""
         sys.exit()
 
     def do_price(self, line):
+        """Prints the most recent bitcoin price"""
         self.print_curr_price()
 
     def do_run(self, line):
+        """Start a real live trading session"""
         self.set_ticker_on()
 
     def do_list(self, line):
+        """Display all currently loaded strategies"""
         self.list_strategies()
 
     def do_config(self, option):
@@ -238,6 +235,7 @@ class runner(cmd.Cmd):
 
 
     def do_load(self, option):
+        """Load a strategy"""
         print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
         input = raw_input("> ")
         filename = str(input)
@@ -247,6 +245,8 @@ class runner(cmd.Cmd):
         self.load_strategy(filename, loaded_strategy)
 
     def do_backtest(self, option):
+        """Performs a single fold backtest"""
+
         strategy_to_backtest = ""
         print("Enter the class name of the strategy to backtest, or press enter to\n"
                 "backtest on the default strategy.")
@@ -301,6 +301,11 @@ class runner(cmd.Cmd):
                 self.strategies[strategy_to_backtest].backtest_strategy(historic_data)
 
     def do_optimize(self, line):
+        """Tries to find the best possible constant values for a strategy"""
+
+        print("WARNING: Optimization can take a LONG time i.e. days or more")
+        print("Computational complexity is O(n^a) n = granularity, a = num values "
+                " to optimize.")
         usd = 1000
         btc = 1
         days_back_in_time = 7
@@ -353,7 +358,7 @@ class runner(cmd.Cmd):
                 print("Unable to optimize. Try changing strategy's interval")
                 pass
             else:
-                print("Optimizing for fold based on time frame of "+str(start_time)+" to "+str(end_time))
+                print("Optimizing for fold based on time frame from \n"+str(start_time)+" to "+str(end_time))
                 print("with "+str(len(fold_data))+" timeslices of length "+str(self.strategies[strategy].interval)+" seconds each")
                 historic_data.append(fold_data)
 
@@ -417,9 +422,6 @@ class runner(cmd.Cmd):
                 msg['Subject'] = "bitraider has begun a new fold."
                 body = "bitraider has started processing fold #"+fold_id
                 msg.attach(MIMEText(body, 'plain'))
-                #self.email_server.ehlo()
-                #self.email_server.starttls()
-                #self.email_server.ehlo()
                 text = msg.as_string()
                 self.email_server.sendmail(self.email_user, self.email_dest, text)
             performance_by_id_by_fold[fold_id] = {}
@@ -470,9 +472,6 @@ class runner(cmd.Cmd):
                 body += "Market performance: "+str(mkt_perf_by_fold_id[fold_id])+"\n"
             body += "The optimized configuration is: "+str(averages)+"\n"
             msg.attach(MIMEText(body, 'plain'))
-            #self.email_server.ehlo()
-            #self.email_server.starttls()
-            #self.email_server.ehlo()
             text = msg.as_string()
             self.email_server.sendmail(self.email_user, self.email_dest, text)
 
@@ -486,11 +485,22 @@ class runner(cmd.Cmd):
 
     # End python cmd funtions
 
+    def send_email(self, fromaddr, toaddr, subject="bitraider", body=""):
+        """Helper function to send an email"""
+        msg = MIMEMultipart()
+        msg['From'] = fromaddr
+        msg['To'] = toaddr
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+        text = msg.as_string()
+        self.email_server.sendmail(fromaddr, toaddr, text)
+
     def combinations(self, dicts):
-        """Helper function to find all possible combos of strategy parameters"""
+        """Helper function to find all possible combinations of strategy parameters"""
         return (dict(itertools.izip(dicts, x)) for x in itertools.product(*dicts.itervalues()))
 
     def authenticate(self):
+        """Attempts to authenticate using the credentials on the runner object"""
         try:
             self.exchange = cb_exchange(self.auth_key, self.auth_secret, self.auth_password)
             self.accounts = self.exchange.list_accounts()
@@ -502,6 +512,7 @@ class runner(cmd.Cmd):
 
 
     def set_ticker_on(self):
+        """Initiate a real, live trading session"""
         strategy = self.strategies[0]
         start_time = time.time()
         lower_bound = start_time
@@ -548,6 +559,7 @@ class runner(cmd.Cmd):
                 #strategy.trade(interval_data)
 
     def run(self):
+        """Initiates the CLI prompt"""
         # Time Configuration
         self.curr_time = time.time() # Seconds since Jan 1st, 1970
         self.curr_timezone = pytz.timezone("US/Central")
@@ -556,6 +568,10 @@ class runner(cmd.Cmd):
     def print_curr_price(self):
         """Print the most recent price."""
         print(self.exchange.get_last_trade('BTC-USD')['price'])
+
+    def list_strategies(self):
+        for key in self.strategies.keys():
+            print(key)
 
     def load_strategy(self, module, cls):
         """Load a user-defined strategy from a file.
