@@ -3,7 +3,8 @@ bitraider/eli_strategy.py
 eli_strategy.py
 
 # Ignore local configuration
-bitraider/settings.ini
+bitraider/*.ini
+*.ini
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
