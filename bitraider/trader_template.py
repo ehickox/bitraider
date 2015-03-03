@@ -76,7 +76,7 @@ class runner(cmd.Cmd):
                 pass
 
         if self.accounts is not None:
-            print(str(len(self.accounts))+" account(s) were found.")
+            print(str(len(self.accounts))+" account(s) found.")
             for i in range(0, len(self.accounts)):
                 try:
                     print("Account ID: "+str(self.accounts[i]['id'])+" Available Funds: "+str(self.accounts[i]['available'])+" "+str(self.accounts[i]['currency'])+"")
