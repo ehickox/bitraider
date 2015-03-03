@@ -52,7 +52,7 @@ The bitraider package contains the following subpackages
 
 1. strategy: a module containing what a strategy class should look like
 
-2. cbexchange: a module containing cb_exchange, a CoinbaseExchange API Wrapper
+2. exchange: a module containing cb_exchange, a CoinbaseExchange API Wrapper
 
 3. trader_template: a terminal-style dashboard for backtesting or running trading strategies.
 
