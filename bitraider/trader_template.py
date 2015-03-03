@@ -6,6 +6,7 @@ import ConfigParser
 import cmd
 import itertools
 import smtplib
+import random
 from email.MIMEText import MIMEText
 from email.MIMEMultipart import MIMEMultipart
 from datetime import date, datetime, timedelta
@@ -106,6 +107,7 @@ class runner(cmd.Cmd):
             self.email_server.ehlo()
             self.email_server.starttls()
             self.email_server.login(self.email_user, self.email_pass)
+            self.email_server.quit()
             self.email = True
         except Exception, err:
             #print(str(err))
@@ -220,6 +222,7 @@ class runner(cmd.Cmd):
                     self.email_server.ehlo()
                     self.email_server.starttls()
                     self.email_server.login(self.email_user, self.email_pass)
+                    self.email_server.quit()
                 except Exception, err:
                     print(str(err))
                     print("Something went wrong while logging in using the provided "
@@ -302,7 +305,7 @@ class runner(cmd.Cmd):
                 self.strategies[strategy_to_backtest].backtest_strategy(historic_data)
 
     def do_optimize(self, line):
-        """Tries to find the best possible constant values for a strategy"""
+        """Finds the best possible constant values for a strategy"""
 
         print("WARNING: Optimization can take a LONG time i.e. days or more")
         print("Computational complexity is O(n^a) n = granularity, a = num values "
@@ -348,19 +351,23 @@ class runner(cmd.Cmd):
         historic_data = []
         curr_time = datetime.now(tz=self.curr_timezone)
 
+        print("Pulling historical data from exchange...")
+
         for fold in range(self.num_folds):
             start_time_sec = curr_time - timedelta(seconds=86400*days_back_in_time)
             start_time = start_time_sec.isoformat(' ')
             end_time = curr_time.isoformat(' ')
             curr_time = start_time_sec
             fold_data = self.strategies[strategy].exchange.get_historic_rates(start_time=start_time, end_time=end_time, granularity=self.strategies[strategy].interval)
+            # Sleep between 1 and 3 seconds to lighten load on exchange API
+            time.sleep(random.randint(1, 3))
             if type(fold_data) is not list:
                 print("API error: "+str(fold_data.get("message", "")))
                 print("Unable to optimize. Try changing strategy's interval")
                 pass
             else:
-                print("Optimizing for fold based on time frame from \n"+str(start_time)+" to "+str(end_time))
-                print("with "+str(len(fold_data))+" timeslices of length "+str(self.strategies[strategy].interval)+" seconds each")
+                print("Optimizing fold #"+str(fold)+" based on time frame from \n"+str(start_time)+" to "+str(end_time))
+                print("with "+str(len(fold_data))+" timeslices of length "+str(self.strategies[strategy].interval)+" seconds each\n")
                 historic_data.append(fold_data)
 
         strategy_attributes = dir(self.strategies[strategy])
@@ -418,14 +425,9 @@ class runner(cmd.Cmd):
             print("\nOptimizing on fold #"+fold_id)
             if self.email == True:
                 # Email when starting a new fold
-                msg = MIMEMultipart()
-                msg['From'] = self.email_user
-                msg['To'] = self.email_dest
-                msg['Subject'] = "bitraider has begun a new fold."
+                subject = "bitraider has begun a new fold."
                 body = "bitraider has started processing fold #"+fold_id
-                msg.attach(MIMEText(body, 'plain'))
-                text = msg.as_string()
-                self.email_server.sendmail(self.email_user, self.email_dest, text)
+                self.send_email(self.email_user, self.email_dest, subject, body)
             performance_by_id_by_fold[fold_id] = {}
             idx = 0
             for configuration in attribute_vals_by_id.keys():
@@ -471,19 +473,15 @@ class runner(cmd.Cmd):
 
         # Email when done
         if self.email == True:
-            msg = MIMEMultipart()
-            msg['From'] = self.email_user
-            msg['To'] = self.email_dest
-            msg['Subject'] = "bitraider has finished optimizing "+strategy
+            subject = "bitraider has finished optimizing "+strategy
             body = "Here are the best configs with their performances from each fold: \n"
             for fold_id in fold_bests.keys():
+                body += "Fold #"+str(fold_id)
                 body += "Config: "+str(attribute_vals_by_id[fold_bests[fold_id]])+"\n"
                 body += "Strategy performance: "+str(performance_by_id_by_fold[fold_id][fold_bests[fold_id]])+"\n"
                 body += "Market performance: "+str(mkt_perf_by_fold_id[fold_id])+"\n"
             body += "The optimized configuration is: "+str(averages)+"\n"
-            msg.attach(MIMEText(body, 'plain'))
-            text = msg.as_string()
-            self.email_server.sendmail(self.email_user, self.email_dest, text)
+            self.send_email(self.email_user, self.email_dest, subject, body)
 
         print("Here are the best configs with their performances from each fold: ")
         for fold_id in fold_bests.keys():
@@ -497,6 +495,7 @@ class runner(cmd.Cmd):
 
     def send_email(self, fromaddr, toaddr, subject="bitraider", body=""):
         """Helper function to send an email"""
+        body += "\nThis is an automated email sent by bitraider"
         msg = MIMEMultipart()
         msg['From'] = fromaddr
         msg['To'] = toaddr
@@ -509,6 +508,7 @@ class runner(cmd.Cmd):
             self.email_server.starttls()
             self.email_server.login(self.email_user, self.email_pass)
             self.email_server.sendmail(fromaddr, toaddr, text)
+            self.email_server.quit()
         except Exception, err:
             print("error: email failed")
             print(str(err))
