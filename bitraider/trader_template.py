@@ -415,6 +415,7 @@ class runner(cmd.Cmd):
         for fold in historic_data:
             # Change the attribute values for this strategy, updating when the performance is highest
             fold_id = str(historic_data.index(fold))
+            print("\nOptimizing on fold #"+fold_id)
             if self.email == True:
                 # Email when starting a new fold
                 msg = MIMEMultipart()
@@ -426,16 +427,24 @@ class runner(cmd.Cmd):
                 text = msg.as_string()
                 self.email_server.sendmail(self.email_user, self.email_dest, text)
             performance_by_id_by_fold[fold_id] = {}
+            idx = 0
             for configuration in attribute_vals_by_id.keys():
-                print("Backtesting with strategy configuration #"+configuration+": "+str(attribute_vals_by_id[configuration]))
-                self.load_strategy(self.module, strategy)
+                #print("Backtesting with strategy configuration #"+configuration+": "+str(attribute_vals_by_id[configuration]))
+
+                percent = (float(idx)/float(len(attribute_vals_by_id)))*100 + 1
+                sys.stdout.write("\r%d%%" % percent)
+                sys.stdout.flush()
+                idx += 1
+                self.load_strategy(self.module, strategy, verbose=False)
                 self.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
                 for attribute in attribute_vals_by_id[configuration]:
                     setattr(self.strategies[strategy], attribute, attribute_vals_by_id[configuration][attribute])
                 # Once all the attributes are set, perform backtest for this config
-                performance_vs_mkt, strategy_performance, mkt_performance = self.strategies[strategy].backtest_strategy(fold)
+                performance_vs_mkt, strategy_performance, mkt_performance = self.strategies[strategy].backtest_strategy(fold, verbose=False)
                 performance_by_id_by_fold[fold_id][str(configuration)] = strategy_performance
                 mkt_perf_by_fold_id[fold_id] = mkt_performance
+
+        print("\n")
 
         # Find the best config in each fold, then average the attribute values
         fold_bests = {}
@@ -582,7 +591,7 @@ class runner(cmd.Cmd):
         for key in self.strategies.keys():
             print(key)
 
-    def load_strategy(self, module, cls):
+    def load_strategy(self, module, cls, verbose=True):
         """Load a user-defined strategy from a file.
 
         \n`module`: the filename in the current directory containing the strategy class which
@@ -596,7 +605,8 @@ class runner(cmd.Cmd):
         loaded_strategy_ = getattr(_temp, cls)
         instance_of_loaded_strategy = loaded_strategy_()
         self.strategies[classname] = instance_of_loaded_strategy
-        print("Loaded strategy: "+str(cls)+" from file: "+str(module)+".py")
+        if verbose:
+            print("Loaded strategy: "+str(cls)+" from file: "+str(module)+".py")
 
 def run():
     my_runner = runner()

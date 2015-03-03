@@ -34,7 +34,7 @@ class strategy(object):
         """
         return
 
-    def backtest_strategy(self, historic_data):
+    def backtest_strategy(self, historic_data, verbose=True):
         """Returns performance of a strategy vs market performance.
         """
         # Reverse the data since Coinbase returns it in reverse chronological
@@ -46,13 +46,16 @@ class strategy(object):
         end_price = float(historic_data[-1][4])
         market_performance = ((end_price-start_price)/start_price)*100
 
-        print("Running simulation on historic data. This may take some time....")
+        if verbose:
+            print("Running simulation on historic data. This may take some time....")
+
         for timeslice in historic_data:
             # Display what percent through the data we are
-            idx = historic_data.index(timeslice)
-            percent = (float(idx)/float(len(historic_data)))*100 + 1
-            sys.stdout.write("\r%d%%" % percent)
-            sys.stdout.flush()
+            if verbose:
+                idx = historic_data.index(timeslice)
+                percent = (float(idx)/float(len(historic_data)))*100 + 1
+                sys.stdout.write("\r%d%%" % percent)
+                sys.stdout.flush()
 
             self.trade(timeslice)
 
@@ -61,19 +64,20 @@ class strategy(object):
         end_amt = (float(self.exchange.usd_bal)/float(end_price)) + float(self.exchange.btc_bal)
         start_amt = (float(self.exchange.start_usd)/float(start_price)) + float(self.exchange.start_btc)
         strategy_performance = ((end_amt-start_amt)/start_amt)*100
-        print("\n")
-        print("Times recalculated: "+str(self.times_recalculated))
-        print("Times bought: "+str(self.exchange.times_bought))
-        print("Times sold: "+str(self.exchange.times_sold))
-        print("The Market's performance: "+str(market_performance)+" %")
-        print("Strategy's performance: "+str(strategy_performance)+" %")
-        print("Account's ending value if no trades were made: "+str(end_amt_no_trades)+" BTC")
-        print("Account's ending value with this strategy: "+str(end_amt)+" BTC")
         strategy_performance_vs_market = strategy_performance - market_performance
-        if strategy_performance > market_performance:
-            print("Congratulations! This strategy has beat the market by: "+str(strategy_performance_vs_market)+" %")
-        elif strategy_performance < market_performance:
-            print("This strategy has preformed: "+str(strategy_performance_vs_market)+" % worse than market.")
+        if verbose:
+            print("\n")
+            print("Times recalculated: "+str(self.times_recalculated))
+            print("Times bought: "+str(self.exchange.times_bought))
+            print("Times sold: "+str(self.exchange.times_sold))
+            print("The Market's performance: "+str(market_performance)+" %")
+            print("Strategy's performance: "+str(strategy_performance)+" %")
+            print("Account's ending value if no trades were made: "+str(end_amt_no_trades)+" BTC")
+            print("Account's ending value with this strategy: "+str(end_amt)+" BTC")
+            if strategy_performance > market_performance:
+                print("Congratulations! This strategy has beat the market by: "+str(strategy_performance_vs_market)+" %")
+            elif strategy_performance < market_performance:
+                print("This strategy has preformed: "+str(strategy_performance_vs_market)+" % worse than market.")
 
         return strategy_performance_vs_market, strategy_performance, market_performance
 
