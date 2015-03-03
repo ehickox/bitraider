@@ -13,11 +13,11 @@ strategy class that enables you to implement different trading techniques.
     $cd example_trader
     ```
 
-4. Create a class that inherits from bitraider.strategy. Implement all necessary functions.
+3. Create a class that inherits from bitraider.strategy. Implement all necessary functions.
 NOTE: See `example_strategy.py` for a more thurough example.
 
     ```
-    vim mystrategy.py
+    $vim mystrategy.py
     ```
 
     ```
@@ -26,21 +26,32 @@ NOTE: See `example_strategy.py` for a more thurough example.
         class my_strategy(strategy):
 
             def __init__(self):
-                self.usd_bal = 1000
-                self.other_attributes = 999
+                self.interval = 60
+                # Look at every 60 seconds, required attribute
+                self.any_attribute = 999
+                self.current_average = 0
+                self.recalculate_every = 8600
+                self.time_elapsed = 0
+                # Recalculate average every day
 
             def trade(self, timeslice):
                 # This will get run in a loop for each timeslice
+                # Increment time elapsed
+                # If time_elapsed % recalculate_every == 0:
+                #   recalculate average
                 pass
     ```
 
-5. `$bitraider`
+4. `$bitraider`
 
 Package Organization
 ====================
 The bitraider package contains the following subpackages
+
 1. strategy: a module containing what a strategy class should look like
+
 2. cbexchange: a module containing cb_exchange, a CoinbaseExchange API Wrapper
+
 3. trader_template: a terminal-style dashboard for backtesting or running trading strategies.
 
 TODO:

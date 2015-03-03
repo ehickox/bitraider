@@ -1,4 +1,3 @@
-from bitraider.cbexchange import cb_exchange
 from bitraider.trader_template import runner
 from bitraider.strategy import strategy
 
@@ -10,7 +9,7 @@ from bitraider.strategy import strategy
 #
 
 """
-A Library of tools for algorithmic Bitcoin trading in Python. Bitraider includes a Coinbase 
+A Library of tools for algorithmic Bitcoin trading in Python. Bitraider includes a Coinbase
 Exchange API wrapper, a CLI dashboard for backtesting or running a trader, and an abstract
 strategy object that enables you to implement different trading techniques.
 
@@ -22,28 +21,30 @@ strategy object that enables you to implement different trading techniques.
 `$mkdir example_trader`
 `$cd example_trader`
 
-3. Create an `auth.txt` containing your Coinbase API key, secret, and passphrase on lines 1, 2, and 3 respectively.
-`$vim auth.txt`
-
-In auth.txt:
-```
-MY-API-KEY-HERE
-MY-API-SECRET-HERE
-MY-API-PASSPHRASE-HERE
-```
-
-4. Create an object that inherits from strategy. Implement all necessary functions. For Example:
+3. Create an object that inherits from strategy. Implement all necessary functions. See example_strategy.py for a more thurough example. For Example:
 
     #!python
     from bitraider import strategy as strategy
 
-    class my_strategy(strategy):
+        class my_strategy(strategy):
 
-        def backtest_strategy(self, historical_data, start_btc, start_usd):
-            for timeslice in historical_data:
+            def __init__(self):
+                self.interval = 60
+                # Look at every 60 seconds, required attribute
+                self.any_attribute = 999
+                self.current_average = 0
+                self.recalculate_every = 8600
+                self.time_elapsed = 0
+                # Recalculate average every day
+
+            def trade(self, timeslice):
+                # This will get run in a loop for each timeslice
+                # Increment time elapsed
+                # If time_elapsed % recalculate_every == 0:
+                #   recalculate average
                 pass
 
-5. Run: `$bitraider`
+4. Run: `$bitraider`
 
 Package Organization
 ====================
@@ -60,9 +61,8 @@ Contributing
 `bitraider` [is on GitHub](https://github.com/ehickox2012/bitraider). Pull requests and bug reports are welcome.
 """
 
-__version__ = '0.0.3' 
-"""The version of bitraider""" 
-     
-__author__ = 'Eli Hickox <liquidchickenman.blogspot.com>' 
-"""The author of bitraider""" 
+__version__ = '0.0.4'
+"""The version of bitraider"""
 
+__author__ = 'Eli Hickox <liquidchickenman.blogspot.com>'
+"""The author of bitraider"""

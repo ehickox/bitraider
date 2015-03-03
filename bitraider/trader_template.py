@@ -22,7 +22,7 @@ class runner(cmd.Cmd):
         print("  / __ \/ / __/ ___/ __ `/ / __  / _ \/ ___/")
         print(" / /_/ / / /_/ /  / /_/ / / /_/ /  __/ /    ")
         print("/_.___/_/\__/_/   \__,_/_/\__,_/\___/_/     ")
-        print("")
+        print("============================================")
         print("Welcome to bitraider v0.0.4, an algorithmic Bitcoin trader!")
 
         cmd.Cmd.__init__(self)
