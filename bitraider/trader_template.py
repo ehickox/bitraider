@@ -7,6 +7,8 @@ import cmd
 import itertools
 import smtplib
 import random
+import multiprocessing
+import numpy as np
 from email.MIMEText import MIMEText
 from email.MIMEMultipart import MIMEMultipart
 from datetime import date, datetime, timedelta
@@ -115,6 +117,16 @@ class runner(cmd.Cmd):
                     "\'config email\' to set them")
             try:
                 self.config.add_section("email")
+            except:
+                pass
+
+        # Try to load performance/concurrency settings
+        self.num_cores = 1
+        try:
+            self.num_cores = self.config.get("performance", "cores")
+        except Exception, err:
+            try:
+                self.config.add_section("performance")
             except:
                 pass
 
@@ -237,6 +249,14 @@ class runner(cmd.Cmd):
                 with open(self.config_path, "wb") as config_file:
                     self.config.write(config_file)
 
+            elif option == "performance":
+                print("Type the number of parallel processes to be used: ")
+                print("Available cores: "+str(multiprocessing.cpu_count()))
+                option = raw_input("> ")
+                self.num_cores = option
+                self.config.set("performance", "cores", self.num_cores)
+                with open(self.config_path, "wb") as config_file:
+                    self.config.write(config_file)
 
     def do_load(self, option):
         """Load a strategy"""
@@ -374,8 +394,10 @@ class runner(cmd.Cmd):
         bounds_by_attribute = {}
         print("Note: strategy interval cannot be optimized due to API restraints")
 
+        reserved_attributes = ['interval', 'backtest_strategy', 'trade', 'backtest_strategy'
+                'calculate_historic_data']
         for attribute in strategy_attributes:
-            if "__" not in str(attribute) and "_abc" not in str(attribute) and str(attribute) != "interval":
+            if "__" not in str(attribute) and "_abc" not in str(attribute) and str(attribute) not in reserved_attributes:
                 # Optimizing for interval would poll API too frequently
                 print("Enter the lower bound for attribute: "+str(attribute)+", or press enter to skip:")
                 input = raw_input("> ")
@@ -414,83 +436,72 @@ class runner(cmd.Cmd):
             attribute_vals_by_id[str(config_id)] = config
             config_id += 1
 
-        performance_by_id_by_fold = {}
+        best_config_by_fold_id = {}
         mkt_perf_by_fold_id = {}
-        performance_vs_mkt = 0
-        strategy_performance = 0
-        mkt_performance = 0
+        best_perfs_by_fold_id = {}
+        pool = multiprocessing.Pool(self.num_cores)
         for fold in historic_data:
             # Change the attribute values for this strategy, updating when the performance is highest
             fold_id = str(historic_data.index(fold))
-            print("\nOptimizing on fold #"+fold_id)
-            if self.email == True:
-                # Email when starting a new fold
-                subject = "bitraider has begun a new fold."
-                body = "bitraider has started processing fold #"+fold_id
-                self.send_email(self.email_user, self.email_dest, subject, body)
-            performance_by_id_by_fold[fold_id] = {}
-            idx = 0
-            for configuration in attribute_vals_by_id.keys():
-                #print("Backtesting with strategy configuration #"+configuration+": "+str(attribute_vals_by_id[configuration]))
+            print("\nFinding best config for fold #"+fold_id)
+            best_config_by_fold_id[fold_id] = pool.apply_async(
+                    get_best_config_for_strategy, (self, strategy, attribute_vals_by_id, fold, usd, btc))
+        for key, result in best_config_by_fold_id.items():
+            result_tuple = tuple(result.get())
+            best_config_by_fold_id[key] = result_tuple[0]
+            mkt_performance = result_tuple[1]
+            mkt_perf_by_fold_id[key] = mkt_performance
+            strategy_perf = result_tuple[2]
+            best_perfs_by_fold_id = strategy_perf
 
-                percent = (float(idx)/float(len(attribute_vals_by_id)))*100 + 1
-                sys.stdout.write("\r%d%%" % percent)
-                sys.stdout.flush()
-                idx += 1
-                self.load_strategy(self.module, strategy, verbose=False)
-                self.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
-                for attribute in attribute_vals_by_id[configuration]:
-                    setattr(self.strategies[strategy], attribute, attribute_vals_by_id[configuration][attribute])
-                # Once all the attributes are set, perform backtest for this config
-                performance_vs_mkt, strategy_performance, mkt_performance = self.strategies[strategy].backtest_strategy(fold, verbose=False)
-                performance_by_id_by_fold[fold_id][str(configuration)] = strategy_performance
-                mkt_perf_by_fold_id[fold_id] = mkt_performance
+        # For each best configuration, test it against all
+        # other folds it was not optimized for
+        # This dict is {fold_id:[perf, perf, ...}}
+        performances_by_potentials = {}
+        for fold_id, config in best_config_by_fold_id.items():
+            new_hist_data = historic_data[:]
+            del new_hist_data[int(fold_id)]
+            for other_fold_id in new_hist_data:
+                performances_by_potentials[fold_id] = pool.apply_async(
+                        get_perfs_by_fold, (self, strategy, config, new_hist_data, usd, btc))
+        for key, result in performances_by_potentials.items():
+            performances_by_potentials[key] = result.get()
 
-        print("\n")
+        # Find the strategy that had the best average performance on all other folds
+        avg_perf_by_fold = {}
+        for fold_id, performances in performances_by_potentials.items():
+            avg_perf_by_fold[fold_id] = np.mean(performances).item()
 
-        # Find the best config in each fold, then average the attribute values
-        fold_bests = {}
-        for fold_id in performance_by_id_by_fold.keys():
-            best_config = "0"
-            for config in performance_by_id_by_fold[fold_id]:
-                if performance_by_id_by_fold[fold_id][config] > performance_by_id_by_fold[fold_id][best_config]:
-                    best_config = config
-                    fold_bests[fold_id] = best_config
+        best_perf = '0'
+        for fold_id, perf in avg_perf_by_fold.items():
+            if perf > avg_perf_by_fold[best_perf]:
+                best_perf = fold_id
 
-        totals = {}
-        for fold_id in fold_bests.keys():
-            for attr in attribute_vals_by_id[fold_bests[fold_id]].keys():
-                value = attribute_vals_by_id[fold_bests[fold_id]][attr]
-                if attr not in totals.keys():
-                    totals[attr] = value
-                else:
-                    totals[attr] += value
-
-        averages = totals
-        for key in totals.keys():
-            value = totals[key]
-            averages[key] = value/self.num_folds
+        best_config = best_config_by_fold_id[best_perf]
 
         # Email when done
         if self.email == True:
             subject = "bitraider has finished optimizing "+strategy
             body = "Here are the best configs with their performances from each fold: \n"
-            for fold_id in fold_bests.keys():
-                body += "Fold #"+str(fold_id)
-                body += "Config: "+str(attribute_vals_by_id[fold_bests[fold_id]])+"\n"
-                body += "Strategy performance: "+str(performance_by_id_by_fold[fold_id][fold_bests[fold_id]])+"\n"
+            for fold_id, config in best_config_by_fold_id.items():
+                body += "Fold #"+str(fold_id)+"\n"
+                body += "Config: "+str(config)+"\n"
+                body += "Strategy performance: "+str(best_perfs_by_fold_id[fold_id])+"\n"
                 body += "Market performance: "+str(mkt_perf_by_fold_id[fold_id])+"\n"
-            body += "The optimized configuration is: "+str(averages)+"\n"
+                body += "Strategy's avg performance on all other folds: "+str(avg_perf_by_fold[fold_id])+"\n"
+            body += "The best configuration is: "+str(best_config)+"\n"
             self.send_email(self.email_user, self.email_dest, subject, body)
 
         print("Here are the best configs with their performances from each fold: ")
-        for fold_id in fold_bests.keys():
-            print("Config: "+str(attribute_vals_by_id[fold_bests[fold_id]]))
-            print("Strategy performance: "+str(performance_by_id_by_fold[fold_id][fold_bests[fold_id]]))
-            print("Market performance: "+str(mkt_perf_by_fold_id[fold_id]))
-        print("The best performing strategy configuration is: "+str(averages))
-        #print("With a performance vs market of: "+str(performance_by_id[best_config]))
-
+        body = ""
+        for fold_id, config in best_config_by_fold_id.items():
+            body += "Fold #"+str(fold_id)+"\n"
+            body += "Config: "+str(config)+"\n"
+            body += "Strategy performance: "+str(best_perfs_by_fold_id[fold_id])+"\n"
+            body += "Market performance: "+str(mkt_perf_by_fold_id[fold_id])+"\n"
+            body += "Strategy's avg performance on all other folds: "+str(avg_perf_by_fold[fold_id])+"\n"
+        body += "The best configuration is: "+str(best_config)+"\n"
+        print(body)
     # End python cmd funtions
 
     def send_email(self, fromaddr, toaddr, subject="bitraider", body=""):
@@ -607,6 +618,36 @@ class runner(cmd.Cmd):
         self.strategies[classname] = instance_of_loaded_strategy
         if verbose:
             print("Loaded strategy: "+str(cls)+" from file: "+str(module)+".py")
+
+# Functions used for concurrent processing
+def get_perfs_by_fold(runner, strategy, config, folds, usd, btc):
+    perfs = []
+    for fold in folds:
+        runner.strategies[strategy].backtest_strategy
+        runner.load_strategy(runner.module, strategy, verbose=False)
+        runner.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
+        for attribute, value in config.items():
+            setattr(runner.strategies[strategy], attribute, value)
+        # Once all the attributes are set, perform backtest for this config
+        performance_vs_mkt, strategy_performance, mkt_performance = runner.strategies[strategy].backtest_strategy(fold, verbose=False)
+        perfs.append(strategy_performance)
+    return perfs
+
+def get_best_config_for_strategy(runner, strategy, attribute_vals_by_id, fold, usd, btc):
+    best_perf = -999
+    best_config = {}
+    for configuration in attribute_vals_by_id.keys():
+        runner.load_strategy(runner.module, strategy, verbose=False)
+        runner.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
+        for attribute in attribute_vals_by_id[configuration]:
+            setattr(runner.strategies[strategy], attribute, attribute_vals_by_id[configuration][attribute])
+        # Once all the attributes are set, perform backtest for this config
+        performance_vs_mkt, strategy_performance, mkt_performance = runner.strategies[strategy].backtest_strategy(fold, verbose=False)
+        if strategy_performance > best_perf:
+            best_config = attribute_vals_by_id[configuration]
+            best_perf = strategy_performance
+    return best_config, mkt_performance, strategy_performance
+
 
 def run():
     my_runner = runner()

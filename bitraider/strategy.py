@@ -3,7 +3,7 @@ import pytz
 import time
 import numpy
 from datetime import date, datetime, timedelta
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 from exchange import cb_exchange as cb_exchange
 from exchange import CoinbaseExchangeAuth
 from abc import ABCMeta, abstractmethod
