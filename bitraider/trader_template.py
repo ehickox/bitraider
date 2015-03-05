@@ -440,14 +440,16 @@ class runner(cmd.Cmd):
         mkt_perf_by_fold_id = {}
         best_perfs_by_fold_id = {}
         pool = multiprocessing.Pool(self.num_cores)
+        print("made the pool")
         for fold in historic_data:
-            # Change the attribute values for this strategy, updating when the performance is highest
             fold_id = str(historic_data.index(fold))
             print("\nFinding best config for fold #"+fold_id)
             best_config_by_fold_id[fold_id] = pool.apply_async(
                     get_best_config_for_strategy, (self, strategy, attribute_vals_by_id, fold, usd, btc))
+        print('tasks added')
         pool.close()
         pool.join()
+        print('processes finished')
         for key, result in best_config_by_fold_id.items():
             result_tuple = tuple(result.get())
             best_config_by_fold_id[key] = result_tuple[0]
@@ -642,7 +644,12 @@ def get_perfs_by_fold(runner, strategy, config, folds, usd, btc):
 def get_best_config_for_strategy(runner, strategy, attribute_vals_by_id, fold, usd, btc):
     best_perf = -999
     best_config = {}
+    idx = 0
     for configuration in attribute_vals_by_id.keys():
+        percent = (float(idx)/float(len(attribute_vals_by_id)))*100 + 1
+        sys.stdout.write("\r%d%%" % percent)
+        sys.stdout.flush()
+
         runner.load_strategy(runner.module, strategy, verbose=False)
         runner.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
         for attribute in attribute_vals_by_id[configuration]:
@@ -652,6 +659,7 @@ def get_best_config_for_strategy(runner, strategy, attribute_vals_by_id, fold, u
         if strategy_performance > best_perf:
             best_config = attribute_vals_by_id[configuration]
             best_perf = strategy_performance
+        idx += 1
     return best_config, mkt_performance, strategy_performance
 
 
