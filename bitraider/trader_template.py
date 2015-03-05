@@ -123,7 +123,7 @@ class runner(cmd.Cmd):
         # Try to load performance/concurrency settings
         self.num_cores = 1
         try:
-            self.num_cores = self.config.get("performance", "cores")
+            self.num_cores = int(self.config.get("performance", "cores"))
         except Exception, err:
             try:
                 self.config.add_section("performance")
@@ -253,7 +253,7 @@ class runner(cmd.Cmd):
                 print("Type the number of parallel processes to be used: ")
                 print("Available cores: "+str(multiprocessing.cpu_count()))
                 option = raw_input("> ")
-                self.num_cores = option
+                self.num_cores = int(option)
                 self.config.set("performance", "cores", self.num_cores)
                 with open(self.config_path, "wb") as config_file:
                     self.config.write(config_file)
@@ -446,24 +446,30 @@ class runner(cmd.Cmd):
             print("\nFinding best config for fold #"+fold_id)
             best_config_by_fold_id[fold_id] = pool.apply_async(
                     get_best_config_for_strategy, (self, strategy, attribute_vals_by_id, fold, usd, btc))
+        pool.close()
+        pool.join()
         for key, result in best_config_by_fold_id.items():
             result_tuple = tuple(result.get())
             best_config_by_fold_id[key] = result_tuple[0]
             mkt_performance = result_tuple[1]
             mkt_perf_by_fold_id[key] = mkt_performance
             strategy_perf = result_tuple[2]
-            best_perfs_by_fold_id = strategy_perf
+            best_perfs_by_fold_id[key] = strategy_perf
 
         # For each best configuration, test it against all
         # other folds it was not optimized for
         # This dict is {fold_id:[perf, perf, ...}}
         performances_by_potentials = {}
+        pool = multiprocessing.Pool(self.num_cores)
         for fold_id, config in best_config_by_fold_id.items():
             new_hist_data = historic_data[:]
             del new_hist_data[int(fold_id)]
             for other_fold_id in new_hist_data:
                 performances_by_potentials[fold_id] = pool.apply_async(
                         get_perfs_by_fold, (self, strategy, config, new_hist_data, usd, btc))
+
+        pool.close()
+        pool.join()
         for key, result in performances_by_potentials.items():
             performances_by_potentials[key] = result.get()
 
