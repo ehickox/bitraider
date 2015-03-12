@@ -35,7 +35,7 @@ NOTE: See `example_strategy.py` for a more thurough example.
                 self.time_elapsed = 0
 
             def trade(self, timeslice):
-                # This will get run in a loop for each timeslice
+                # This will run in a loop for each timeslice
                 # Increment time elapsed
                 # If time_elapsed % recalculate_every == 0:
                 #   recalculate average
@@ -57,4 +57,3 @@ The bitraider package contains the following subpackages
 TODO:
 ======
 1. Implement logging with python logging
-2. Implement emailer
