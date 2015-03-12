@@ -85,8 +85,8 @@ class strategy(object):
         """Returns average price weighted according to volume, and the number of bitcoins traded
             above and below a price point, called a pivot.\n
 
-        \npivot: the price used for returning volume above and below
-        \ndata: a list of lists formated as follows [time, low, high, open, close]
+        \n`pivot`: the price used for returning volume above and below
+        \n`data`: a list of lists formated as follows [time, low, high, open, close]
         \n[
             \n\t["2014-11-07 22:19:28.578544+00", "0.32", "4.2", "0.35", "4.2", "12.3"],
                 \n\t\t...
