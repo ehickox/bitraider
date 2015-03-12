@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Welcome to bitraider’s documentation! &mdash; bitraider 0.0.3 documentation</title>
+    <title>Welcome to bitraider’s documentation! &mdash; bitraider 0.0.4 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.0.3',
+        VERSION:     '0.0.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="bitraider 0.0.3 documentation" href="#" />
+    <link rel="top" title="bitraider 0.0.4 documentation" href="#" />
     <link rel="next" title="bitraider package" href="bitraider.html" />
    
   
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="bitraider.html" title="bitraider package"
              accesskey="N">next</a> |</li>
-        <li><a href="#">bitraider 0.0.3 documentation</a> &raquo;</li> 
+        <li><a href="#">bitraider 0.0.4 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -60,7 +60,7 @@ strategy class that enables you to implement different trading techniques.</p>
 <div class="section" id="quickstart">
 <h2>Quickstart:<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h2>
 <p>1:</p>
-<div class="highlight-python"><div class="highlight"><pre>pip install bitraider
+<div class="highlight-python"><div class="highlight"><pre>$pip install bitraider
 </pre></div>
 </div>
 <p>2. Create a new directory in which your trader will reside:</p>
@@ -70,27 +70,33 @@ strategy class that enables you to implement different trading techniques.</p>
 <div class="highlight-python"><div class="highlight"><pre>$cd example_trader
 </pre></div>
 </div>
-<p>3. Create an <cite>auth.txt</cite> containing your Coinbase API key, secret, and passphrase on lines 1, 2, and 3 respectively.</p>
-<div class="highlight-python"><div class="highlight"><pre>$vim auth.txt
+<p>3. Create a class that inherits from bitraider.strategy. Implement all necessary functions. See <cite>example_strategy.py</cite> for a more thorough example.</p>
+<div class="highlight-python"><div class="highlight"><pre>$vim mystrategy.py
 </pre></div>
 </div>
-<p>In auth.txt:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">MY</span><span class="o">-</span><span class="n">API</span><span class="o">-</span><span class="n">KEY</span><span class="o">-</span><span class="n">HERE</span>
-<span class="n">MY</span><span class="o">-</span><span class="n">API</span><span class="o">-</span><span class="n">SECRET</span><span class="o">-</span><span class="n">HERE</span>
-<span class="n">MY</span><span class="o">-</span><span class="n">API</span><span class="o">-</span><span class="n">PASSPHRASE</span><span class="o">-</span><span class="n">HERE</span>
-</pre></div>
-</div>
-<p>4. Create an object that inherits from strategy. Implement all necessary functions. For Example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">bitraider</span> <span class="kn">import</span> <span class="n">strategy</span> <span class="k">as</span> <span class="n">strategy</span>
+<div class="highlight-python"><div class="highlight"><pre>from bitraider import strategy as strategy
 
-<span class="k">class</span> <span class="nc">my_strategy</span><span class="p">(</span><span class="n">strategy</span><span class="p">):</span>
+class my_strategy(strategy):
 
-    <span class="k">def</span> <span class="nf">backtest_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">historical_data</span><span class="p">,</span> <span class="n">start_btc</span><span class="p">,</span> <span class="n">start_usd</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">timeslice</span> <span class="ow">in</span> <span class="n">historical_data</span><span class="p">:</span>
-            <span class="k">pass</span>
+    def __init__(self):
+        self.interval = 60
+        # Look at every 60 seconds, required
+        self.time_from_start = 8600
+        # Time needed to have a baseline
+        self.any_attribute = 0.5
+        self.current_average = 0
+        self.time_elapsed = 0
+
+    def trade(self, timeslice):
+        # This will run in a loop for each timeslice
+        # Increment time elapsed
+        self.time_elapsed += self.interval
+        if self.time_elapsed % self.time_from_start == 0:
+            # recalculate average
+        pass
 </pre></div>
 </div>
-<p>5. Run</p>
+<p>4. Run</p>
 <div class="highlight-python"><div class="highlight"><pre>$bitraider
 </pre></div>
 </div>
@@ -101,7 +107,7 @@ strategy class that enables you to implement different trading techniques.</p>
 <p>The bitraider package contains the following subpackages</p>
 <ol class="arabic simple">
 <li>strategy: a module containing what a strategy class should look like</li>
-<li>cbexchange: a module containing cb_exchange, a CoinbaseExchange API Wrapper</li>
+<li>exchange: a module containing cb_exchange, a CoinbaseExchange API Wrapper</li>
 <li>trader_template: a terminal-style dashboard for backtesting or running trading strategies.</li>
 </ol>
 <div class="section" id="contributing">
@@ -112,10 +118,10 @@ strategy class that enables you to implement different trading techniques.</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="bitraider.html">bitraider package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="bitraider.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider.cbexchange">bitraider.cbexchange module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider.example_strategy">bitraider.example_strategy module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider.strategy">bitraider.strategy module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider.trader_template">bitraider.trader_template module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider.exchange">exchange module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider.example_strategy">example_strategy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider.strategy">strategy module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider.trader_template">trader_template module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="bitraider.html#module-bitraider">Module contents</a></li>
 </ul>
 </li>

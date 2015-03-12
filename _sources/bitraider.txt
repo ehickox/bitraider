@@ -4,15 +4,15 @@ bitraider package
 Submodules
 ----------
 
-bitraider.cbexchange module
+exchange module
 ---------------------------
 
-.. automodule:: bitraider.cbexchange
+.. automodule:: bitraider.exchange
     :members:
     :undoc-members:
     :show-inheritance:
 
-bitraider.example_strategy module
+example_strategy module
 ---------------------------------
 
 .. automodule:: bitraider.example_strategy
@@ -20,7 +20,7 @@ bitraider.example_strategy module
     :undoc-members:
     :show-inheritance:
 
-bitraider.strategy module
+strategy module
 -------------------------
 
 .. automodule:: bitraider.strategy
@@ -28,7 +28,7 @@ bitraider.strategy module
     :undoc-members:
     :show-inheritance:
 
-bitraider.trader_template module
+trader_template module
 --------------------------------
 
 .. automodule:: bitraider.trader_template

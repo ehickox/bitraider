@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>bitraider package &mdash; bitraider 0.0.3 documentation</title>
+    <title>bitraider package &mdash; bitraider 0.0.4 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.0.3',
+        VERSION:     '0.0.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="bitraider 0.0.3 documentation" href="index.html" />
+    <link rel="top" title="bitraider 0.0.4 documentation" href="index.html" />
     <link rel="prev" title="Welcome to bitraider’s documentation!" href="index.html" />
    
   
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to bitraider’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">bitraider 0.0.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">bitraider 0.0.4 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,153 +57,190 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-bitraider.cbexchange">
-<span id="bitraider-cbexchange-module"></span><h2>bitraider.cbexchange module<a class="headerlink" href="#module-bitraider.cbexchange" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-bitraider.exchange">
+<span id="exchange-module"></span><h2>exchange module<a class="headerlink" href="#module-bitraider.exchange" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="bitraider.cbexchange.CoinbaseExchangeAuth">
-<em class="property">class </em><code class="descclassname">bitraider.cbexchange.</code><code class="descname">CoinbaseExchangeAuth</code><span class="sig-paren">(</span><em>api_key</em>, <em>secret_key</em>, <em>passphrase</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#CoinbaseExchangeAuth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.CoinbaseExchangeAuth" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.CoinbaseExchangeAuth">
+<em class="property">class </em><code class="descclassname">bitraider.exchange.</code><code class="descname">CoinbaseExchangeAuth</code><span class="sig-paren">(</span><em>api_key</em>, <em>secret_key</em>, <em>passphrase</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#CoinbaseExchangeAuth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.CoinbaseExchangeAuth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">requests.auth.AuthBase</span></code></p>
 </dd></dl>
 
 <dl class="class">
-<dt id="bitraider.cbexchange.cb_exchange">
-<em class="property">class </em><code class="descclassname">bitraider.cbexchange.</code><code class="descname">cb_exchange</code><span class="sig-paren">(</span><em>key=None</em>, <em>secret=None</em>, <em>password=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.cancel_order">
-<code class="descname">cancel_order</code><span class="sig-paren">(</span><em>order_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.cancel_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.cancel_order" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange">
+<em class="property">class </em><code class="descclassname">bitraider.exchange.</code><code class="descname">cb_exchange</code><span class="sig-paren">(</span><em>key=None</em>, <em>secret=None</em>, <em>password=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitraider.exchange.exchange" title="bitraider.exchange.exchange"><code class="xref py py-class docutils literal"><span class="pre">bitraider.exchange.exchange</span></code></a></p>
+<p>CoinbaseExchange API Wrapper</p>
+<dl class="method">
+<dt id="bitraider.exchange.cb_exchange.cancel_order">
+<code class="descname">cancel_order</code><span class="sig-paren">(</span><em>order_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.cancel_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.cancel_order" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cancel an order</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_24_hour_stats">
-<code class="descname">get_24_hour_stats</code><span class="sig-paren">(</span><em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_24_hour_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_24_hour_stats" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_24_hour_stats">
+<code class="descname">get_24_hour_stats</code><span class="sig-paren">(</span><em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_24_hour_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_24_hour_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get 24 hour stats for the product</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_account">
-<code class="descname">get_account</code><span class="sig-paren">(</span><em>account_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_account"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_account" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_account">
+<code class="descname">get_account</code><span class="sig-paren">(</span><em>account_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_account"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_account" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get information for a single account</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_account_history">
-<code class="descname">get_account_history</code><span class="sig-paren">(</span><em>account_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_account_history"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_account_history" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_account_history">
+<code class="descname">get_account_history</code><span class="sig-paren">(</span><em>account_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_account_history"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_account_history" title="Permalink to this definition">¶</a></dt>
 <dd><p>List account activity. Items are paginated and sorted latest first.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_currencies">
-<code class="descname">get_currencies</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_currencies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_currencies" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_currencies">
+<code class="descname">get_currencies</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_currencies"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_currencies" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of known currencies</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_historic_rates">
-<code class="descname">get_historic_rates</code><span class="sig-paren">(</span><em>start_time</em>, <em>end_time</em>, <em>granularity</em>, <em>product_id='BTC-USD'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_historic_rates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_historic_rates" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_historic_rates">
+<code class="descname">get_historic_rates</code><span class="sig-paren">(</span><em>start_time</em>, <em>end_time</em>, <em>granularity</em>, <em>product_id='BTC-USD'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_historic_rates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_historic_rates" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a historic rates for a product. Rates are returned in grouped
 buckets based on requested granularity</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_holds">
-<code class="descname">get_holds</code><span class="sig-paren">(</span><em>account_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_holds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_holds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Holds are placed on an account for any active orders. As an order 
+<dt id="bitraider.exchange.cb_exchange.get_holds">
+<code class="descname">get_holds</code><span class="sig-paren">(</span><em>account_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_holds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_holds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Holds are placed on an account for any active orders. As an order
 is filled, the hold amount is updated. If ad order is canceled, any
 remaining hold is removed.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_last_trade">
-<code class="descname">get_last_trade</code><span class="sig-paren">(</span><em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_last_trade"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_last_trade" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_last_trade">
+<code class="descname">get_last_trade</code><span class="sig-paren">(</span><em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_last_trade"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_last_trade" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get snapshot information about the last trade (tick)</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_order">
-<code class="descname">get_order</code><span class="sig-paren">(</span><em>order_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_order" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_order">
+<code class="descname">get_order</code><span class="sig-paren">(</span><em>order_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_order" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a single order</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_order_book">
-<code class="descname">get_order_book</code><span class="sig-paren">(</span><em>product_id</em>, <em>level=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_order_book"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_order_book" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_order_book">
+<code class="descname">get_order_book</code><span class="sig-paren">(</span><em>product_id</em>, <em>level=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_order_book"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_order_book" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of open orders for a product. Amount of detail
 shown can be customized with the level parameter.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_products">
-<code class="descname">get_products</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_products"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_products" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_products">
+<code class="descname">get_products</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_products"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_products" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of available currency pairs for trading</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_time">
-<code class="descname">get_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_time" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_time">
+<code class="descname">get_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the API server time</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.get_trades">
-<code class="descname">get_trades</code><span class="sig-paren">(</span><em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.get_trades"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.get_trades" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.get_trades">
+<code class="descname">get_trades</code><span class="sig-paren">(</span><em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.get_trades"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.get_trades" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a paginated list of latest trades for a product</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.list_accounts">
-<code class="descname">list_accounts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.list_accounts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.list_accounts" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.list_accounts">
+<code class="descname">list_accounts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.list_accounts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.list_accounts" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of trading accounts</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.list_fills">
-<code class="descname">list_fills</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.list_fills"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.list_fills" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.list_fills">
+<code class="descname">list_fills</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.list_fills"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.list_fills" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of recent fills</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.list_open_orders">
-<code class="descname">list_open_orders</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.list_open_orders"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.list_open_orders" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.list_open_orders">
+<code class="descname">list_open_orders</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.list_open_orders"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.list_open_orders" title="Permalink to this definition">¶</a></dt>
 <dd><p>List currently open orders</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.place_order">
-<code class="descname">place_order</code><span class="sig-paren">(</span><em>price</em>, <em>size</em>, <em>side</em>, <em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.place_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.place_order" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.place_order">
+<code class="descname">place_order</code><span class="sig-paren">(</span><em>price</em>, <em>size</em>, <em>side</em>, <em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.place_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.place_order" title="Permalink to this definition">¶</a></dt>
 <dd><p>Place an order</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.cbexchange.cb_exchange.transfer">
-<code class="descname">transfer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/cbexchange.html#cb_exchange.transfer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.cbexchange.cb_exchange.transfer" title="Permalink to this definition">¶</a></dt>
+<dt id="bitraider.exchange.cb_exchange.transfer">
+<code class="descname">transfer</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange.transfer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange.transfer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Move funds to/from Coinbase Exchange and Coinbase account</p>
 </dd></dl>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="bitraider.exchange.cb_exchange_sim">
+<em class="property">class </em><code class="descclassname">bitraider.exchange.</code><code class="descname">cb_exchange_sim</code><span class="sig-paren">(</span><em>start_btc</em>, <em>start_usd</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange_sim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange_sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bitraider.exchange.exchange" title="bitraider.exchange.exchange"><code class="xref py py-class docutils literal"><span class="pre">bitraider.exchange.exchange</span></code></a></p>
+<p>Class used for backtesting</p>
+<dl class="method">
+<dt id="bitraider.exchange.cb_exchange_sim.get_historic_rates">
+<code class="descname">get_historic_rates</code><span class="sig-paren">(</span><em>start_time</em>, <em>end_time</em>, <em>granularity</em>, <em>product_id='BTC-USD'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange_sim.get_historic_rates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange_sim.get_historic_rates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a historic rates for a product. Rates are returned in grouped
+buckets based on requested granularity</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitraider.exchange.cb_exchange_sim.get_last_trade">
+<code class="descname">get_last_trade</code><span class="sig-paren">(</span><em>product_id</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange_sim.get_last_trade"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange_sim.get_last_trade" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get snapshot information about the last trade (tick)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="bitraider.exchange.cb_exchange_sim.place_order">
+<code class="descname">place_order</code><span class="sig-paren">(</span><em>price</em>, <em>size</em>, <em>side</em>, <em>product_id</em>, <em>historic_timeslice=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#cb_exchange_sim.place_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.cb_exchange_sim.place_order" title="Permalink to this definition">¶</a></dt>
+<dd><p>Place an order</p>
+<p>For buy orders, we will hold price x size x (1 + fee-percent) USD. For sell orders,
+we will hold the number of Bitcoin you wish to sell. Actual fees are assessed at time of trade.
+If you cancel a partially filled or unfilled order, any remaining funds will be released from hold.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="bitraider.exchange.exchange">
+<em class="property">class </em><code class="descclassname">bitraider.exchange.</code><code class="descname">exchange</code><a class="reference internal" href="_modules/bitraider/exchange.html#exchange"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.exchange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="bitraider.exchange.exchange.place_order">
+<code class="descname">place_order</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/exchange.html#exchange.place_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.exchange.exchange.place_order" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-bitraider.example_strategy">
-<span id="bitraider-example-strategy-module"></span><h2>bitraider.example_strategy module<a class="headerlink" href="#module-bitraider.example_strategy" title="Permalink to this headline">¶</a></h2>
+<span id="example-strategy-module"></span><h2>example_strategy module<a class="headerlink" href="#module-bitraider.example_strategy" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="bitraider.example_strategy.awesome_strategy">
-<em class="property">class </em><code class="descclassname">bitraider.example_strategy.</code><code class="descname">awesome_strategy</code><span class="sig-paren">(</span><em>interval=5</em>, <em>time_from_start=86400</em>, <em>buy_amt=0.001</em>, <em>pivot=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/example_strategy.html#awesome_strategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.example_strategy.awesome_strategy" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">bitraider.example_strategy.</code><code class="descname">awesome_strategy</code><span class="sig-paren">(</span><em>interval=3600</em>, <em>time_from_start=86400</em>, <em>buy_amt=0.001</em>, <em>pivot=0.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/example_strategy.html#awesome_strategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.example_strategy.awesome_strategy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#bitraider.strategy.strategy" title="bitraider.strategy.strategy"><code class="xref py py-class docutils literal"><span class="pre">bitraider.strategy.strategy</span></code></a></p>
 <dl class="method">
-<dt id="bitraider.example_strategy.awesome_strategy.backtest_strategy">
-<code class="descname">backtest_strategy</code><span class="sig-paren">(</span><em>historic_data</em>, <em>start_btc</em>, <em>start_usd</em>, <em>start_time</em>, <em>end_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/example_strategy.html#awesome_strategy.backtest_strategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.example_strategy.awesome_strategy.backtest_strategy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns performance of a strategy vs market performance.</p>
-<p>start_btc &#8211; the starting amount of BTC for the hypothetical account
-start_usd &#8211; the starting amount of USD for the hypothetical account
-start_time &#8211; ISO8601 formated time representing the earliest time to look at
-end_time &#8211; ISO8601 formated time representing the latest time to look at</p>
-</dd></dl>
+<dt id="bitraider.example_strategy.awesome_strategy.trade">
+<code class="descname">trade</code><span class="sig-paren">(</span><em>timeslice</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/example_strategy.html#awesome_strategy.trade"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.example_strategy.awesome_strategy.trade" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
 </div>
 <div class="section" id="module-bitraider.strategy">
-<span id="bitraider-strategy-module"></span><h2>bitraider.strategy module<a class="headerlink" href="#module-bitraider.strategy" title="Permalink to this headline">¶</a></h2>
+<span id="strategy-module"></span><h2>strategy module<a class="headerlink" href="#module-bitraider.strategy" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="bitraider.strategy.strategy">
 <em class="property">class </em><code class="descclassname">bitraider.strategy.</code><code class="descname">strategy</code><span class="sig-paren">(</span><em>name='default name'</em>, <em>interval=5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/strategy.html#strategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.strategy.strategy" title="Permalink to this definition">¶</a></dt>
@@ -211,19 +248,8 @@ end_time &#8211; ISO8601 formated time representing the latest time to look at</
 <p><cite>strategy</cite> defines an abstract base strategy class. Minimum required to create a strategy is a file with a class which inherits from strategy containing a backtest_strategy function. As a bonus, strategy includes utility functions like calculate_historic_data.</p>
 <dl class="method">
 <dt id="bitraider.strategy.strategy.backtest_strategy">
-<code class="descname">backtest_strategy</code><span class="sig-paren">(</span><em>historical_data</em>, <em>start_usd=5</em>, <em>start_btc=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/strategy.html#strategy.backtest_strategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.strategy.strategy.backtest_strategy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Loop through <cite>historical_data</cite>, a list of lists formated as follows:</p>
-<blockquote>
-<div><p>[</p>
-<p>[&#8220;2014-11-07 22:19:28.578544+00&#8221;, &#8220;0.32&#8221;, &#8220;4.2&#8221;, &#8220;0.35&#8221;, &#8220;4.2&#8221;, &#8220;12.3&#8221;],</p>
-<blockquote>
-<div>...</div></blockquote>
-</div></blockquote>
-<p>]</p>
-<p>Each inner list contains:[time, low, high, open, close]</p>
-<p>This method should loop through historical_data, making buy or sell decisions based on available data. You can use the static utility methods in strategy to assist you. You should also format this method to accept:</p>
-<p><cite>start_usd</cite>: the starting amount of USD for this simulation</p>
-<p><cite>start_btc</cite>: the starting amount of BTC for this simulation</p>
+<code class="descname">backtest_strategy</code><span class="sig-paren">(</span><em>historic_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/strategy.html#strategy.backtest_strategy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.strategy.strategy.backtest_strategy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns performance of a strategy vs market performance.</p>
 </dd></dl>
 
 <dl class="staticmethod">
@@ -244,11 +270,19 @@ end_time &#8211; ISO8601 formated time representing the latest time to look at</
 <p>]</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="bitraider.strategy.strategy.trade">
+<code class="descname">trade</code><span class="sig-paren">(</span><em>timeslice</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/strategy.html#strategy.trade"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.strategy.strategy.trade" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform operations on a timeslice.</p>
+<p><cite>timeslice</cite>: a section of trade data with time length equal to the strategy&#8217;s interval, formatted as follows:</p>
+<p>[time, low, high, open, close, volume]</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
 <div class="section" id="module-bitraider.trader_template">
-<span id="bitraider-trader-template-module"></span><h2>bitraider.trader_template module<a class="headerlink" href="#module-bitraider.trader_template" title="Permalink to this headline">¶</a></h2>
+<span id="trader-template-module"></span><h2>trader_template module<a class="headerlink" href="#module-bitraider.trader_template" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="bitraider.trader_template.run">
 <code class="descclassname">bitraider.trader_template.</code><code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.run" title="Permalink to this definition">¶</a></dt>
@@ -256,13 +290,53 @@ end_time &#8211; ISO8601 formated time representing the latest time to look at</
 
 <dl class="class">
 <dt id="bitraider.trader_template.runner">
-<em class="property">class </em><code class="descclassname">bitraider.trader_template.</code><code class="descname">runner</code><span class="sig-paren">(</span><em>commands=None</em>, <em>strategy=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner" title="Permalink to this definition">¶</a></dt>
-<dd><p>Runner is a customizable CLI dashboard for retrieval of market data, backtesting strategies,and running strategies on live data.</p>
-<dl class="attribute">
-<dt id="bitraider.trader_template.runner.auth_file">
-<code class="descname">auth_file</code><em class="property"> = None</em><a class="headerlink" href="#bitraider.trader_template.runner.auth_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create <cite>auth.txt</cite> to connect to CoinbaseExchange. auth.txt should only contain 3 lines containing your CoinbaseExchange API key, secret, and passphrase on lines 1, 2, and 3 respectively.</p>
+<em class="property">class </em><code class="descclassname">bitraider.trader_template.</code><code class="descname">runner</code><a class="reference internal" href="_modules/bitraider/trader_template.html#runner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">cmd.Cmd</span></code></p>
+<dl class="method">
+<dt id="bitraider.trader_template.runner.authenticate">
+<code class="descname">authenticate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.authenticate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.authenticate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.do_backtest">
+<code class="descname">do_backtest</code><span class="sig-paren">(</span><em>option</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.do_backtest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.do_backtest" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.do_config">
+<code class="descname">do_config</code><span class="sig-paren">(</span><em>option</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.do_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.do_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>usage: &#8216;config &#8216; [option]</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.do_exit">
+<code class="descname">do_exit</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.do_exit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.do_exit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.do_list">
+<code class="descname">do_list</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.do_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.do_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.do_load">
+<code class="descname">do_load</code><span class="sig-paren">(</span><em>option</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.do_load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.do_load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.do_optimize">
+<code class="descname">do_optimize</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.do_optimize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.do_optimize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.do_price">
+<code class="descname">do_price</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.do_price"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.do_price" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.do_run">
+<code class="descname">do_run</code><span class="sig-paren">(</span><em>line</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.do_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.do_run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="bitraider.trader_template.runner.load_strategy">
@@ -276,12 +350,6 @@ end_time &#8211; ISO8601 formated time representing the latest time to look at</
 </dd></dl>
 
 <dl class="method">
-<dt id="bitraider.trader_template.runner.print_all_commands">
-<code class="descname">print_all_commands</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.print_all_commands"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.print_all_commands" title="Permalink to this definition">¶</a></dt>
-<dd><p>Print all commands with their descriptions.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="bitraider.trader_template.runner.print_curr_price">
 <code class="descname">print_curr_price</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.print_curr_price"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.print_curr_price" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print the most recent price.</p>
@@ -290,6 +358,11 @@ end_time &#8211; ISO8601 formated time representing the latest time to look at</
 <dl class="method">
 <dt id="bitraider.trader_template.runner.run">
 <code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="bitraider.trader_template.runner.set_ticker_on">
+<code class="descname">set_ticker_on</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bitraider/trader_template.html#runner.set_ticker_on"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#bitraider.trader_template.runner.set_ticker_on" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -316,10 +389,10 @@ end_time &#8211; ISO8601 formated time representing the latest time to look at</
   <ul>
 <li><a class="reference internal" href="#">bitraider package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-bitraider.cbexchange">bitraider.cbexchange module</a></li>
-<li><a class="reference internal" href="#module-bitraider.example_strategy">bitraider.example_strategy module</a></li>
-<li><a class="reference internal" href="#module-bitraider.strategy">bitraider.strategy module</a></li>
-<li><a class="reference internal" href="#module-bitraider.trader_template">bitraider.trader_template module</a></li>
+<li><a class="reference internal" href="#module-bitraider.exchange">exchange module</a></li>
+<li><a class="reference internal" href="#module-bitraider.example_strategy">example_strategy module</a></li>
+<li><a class="reference internal" href="#module-bitraider.strategy">strategy module</a></li>
+<li><a class="reference internal" href="#module-bitraider.trader_template">trader_template module</a></li>
 <li><a class="reference internal" href="#module-bitraider">Module contents</a></li>
 </ul>
 </li>

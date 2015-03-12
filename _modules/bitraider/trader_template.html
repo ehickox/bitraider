@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>bitraider.trader_template &mdash; bitraider 0.0.3 documentation</title>
+    <title>bitraider.trader_template &mdash; bitraider 0.0.4 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.0.3',
+        VERSION:     '0.0.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="bitraider 0.0.3 documentation" href="../../index.html" />
+    <link rel="top" title="bitraider 0.0.4 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">bitraider 0.0.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">bitraider 0.0.4 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -53,20 +53,17 @@
   <h1>Source code for bitraider.trader_template</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">pytz</span>
-<span class="kn">import</span> <span class="nn">xml.utils.iso8601</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">calendar</span>
+<span class="kn">import</span> <span class="nn">ConfigParser</span>
+<span class="kn">import</span> <span class="nn">cmd</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
-<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="kn">from</span> <span class="nn">cbexchange</span> <span class="kn">import</span> <span class="n">cb_exchange</span> <span class="k">as</span> <span class="n">cb_exchange</span>
-<span class="kn">from</span> <span class="nn">cbexchange</span> <span class="kn">import</span> <span class="n">CoinbaseExchangeAuth</span>
 <span class="kn">from</span> <span class="nn">strategy</span> <span class="kn">import</span> <span class="n">strategy</span>
+<span class="kn">from</span> <span class="nn">exchange</span> <span class="kn">import</span> <span class="n">cb_exchange_sim</span><span class="p">,</span> <span class="n">cb_exchange</span>
 
-<div class="viewcode-block" id="runner"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner">[docs]</a><span class="k">class</span> <span class="nc">runner</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;Runner is a customizable CLI dashboard for retrieval of market data, backtesting strategies,and running strategies on live data.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">commands</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="runner"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner">[docs]</a><span class="k">class</span> <span class="nc">runner</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">Cmd</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Create a new runner with provided CLI commands. Default commands are:</span>
 <span class="sd">        \n1. exit: quit autotrader</span>
 <span class="sd">        \n2. help: display all commands</span>
@@ -76,121 +73,398 @@
 <span class="sd">        \n6. load: load a new strategy</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c"># Default Commands</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">commands</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">commands</span> <span class="o">+=</span> <span class="n">commands</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">[</span><span class="s">&quot;exit&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Quit Autotrader&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">[</span><span class="s">&quot;help&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Display all commands&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">[</span><span class="s">&quot;price&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Display current bitcoin price&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">[</span><span class="s">&quot;run&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Start trader&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">[</span><span class="s">&quot;load&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Load a new strategy&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="p">[</span><span class="s">&quot;backtest&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;Backtest a strategy with historic data&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;    __    _ __             _     __         &quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;   / /_  (_) /__________ _(_)___/ /__  _____&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;  / __ \/ / __/ ___/ __ `/ / __  / _ \/ ___/&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot; / /_/ / / /_/ /  / /_/ / / /_/ /  __/ /    &quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;/_.___/_/\__/_/   \__,_/_/\__,_/\___/_/     &quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Welcome to bitraider v0.0.4, an algorithmic Bitcoin trader!&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">auth_file</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="sd">&quot;&quot;&quot;Create `auth.txt` to connect to CoinbaseExchange. auth.txt should only contain 3 lines containing your CoinbaseExchange API key, secret, and passphrase on lines 1, 2, and 3 respectively.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span> <span class="o">=</span> <span class="n">cb_exchange</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">accounts</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Welcome to bitraider v0.0.3, an algorithmic Bitcoin trader&quot;</span><span class="p">)</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Attempting to read Coinbase Exchange API key, secret and password, from auth.txt...&quot;</span><span class="p">)</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">Cmd</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="s">&#39;&gt; &#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intro</span> <span class="o">=</span> <span class="s">&quot;Type a command to get started or type </span><span class="se">\&#39;</span><span class="s">help</span><span class="se">\&#39;</span><span class="s">&quot;</span>
+
+
+        <span class="c"># Init config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_path</span> <span class="o">=</span> <span class="s">&quot;settings.ini&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">()</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">auth_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;auth.txt&#39;</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">auth_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">auth_secret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span> <span class="o">=</span> <span class="n">cb_exchange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auth_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_secret</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">accounts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">list_accounts</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Successfully authenticated!&quot;</span><span class="p">)</span>
-
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_path</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error! Only unauthorized endpoints are available.&quot;</span><span class="p">)</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&quot;error: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+            <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+
+        <span class="c"># Set up strategy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="sd">&quot;&quot;&quot;The currently loaded strategies&quot;&quot;&quot;</span>
+
+        <span class="c"># Try to load a default strategy, if one exists</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">default_strategy_module</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;default_strategy&quot;</span><span class="p">,</span> <span class="s">&quot;module&quot;</span><span class="p">)</span>
+            <span class="n">default_strategy_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;default_strategy&quot;</span><span class="p">,</span> <span class="s">&quot;class&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_strategy</span><span class="p">(</span><span class="n">default_strategy_module</span><span class="p">,</span> <span class="n">default_strategy_class</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="c">#print(str(err))</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;No default strategy configured. Run &quot;</span>
+                    <span class="s">&quot;</span><span class="se">\&#39;</span><span class="s">config default</span><span class="se">\&#39;</span><span class="s"> to set one&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="s">&quot;default_strategy&quot;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span> <span class="o">=</span> <span class="n">cb_exchange_sim</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">accounts</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># Get auth credentials from settings.ini, if they exist, authorize</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auth_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;key&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auth_secret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;secret&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;password&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authenticate</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="c">#print(str(err))</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;No authentication configured. Run &quot;</span>
+                    <span class="s">&quot;</span><span class="se">\&#39;</span><span class="s">config auth</span><span class="se">\&#39;</span><span class="s"> to set it&quot;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">add_section</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accounts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">))</span><span class="o">+</span><span class="s">&quot; accounts were found.&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">)):</span>
-                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Account ID: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;id&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; Available Funds: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;available&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;currency&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Account ID: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;id&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; Available Funds: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;available&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&quot; &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accounts</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;currency&#39;</span><span class="p">])</span><span class="o">+</span><span class="s">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Something went wrong while trying to authenticate with the provided credentials. Try running config&gt;auth again.&quot;</span><span class="p">)</span>
 
-        <span class="c"># Set up strategy</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="sd">&quot;&quot;&quot;The currently loaded strategies&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">strategy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">strategy</span><span class="p">)</span>
+<div class="viewcode-block" id="runner.do_exit"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.do_exit">[docs]</a>    <span class="k">def</span> <span class="nf">do_exit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="runner.do_price"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.do_price">[docs]</a>    <span class="k">def</span> <span class="nf">do_price</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_curr_price</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="runner.do_run"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.do_run">[docs]</a>    <span class="k">def</span> <span class="nf">do_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_ticker_on</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="runner.do_list"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.do_list">[docs]</a>    <span class="k">def</span> <span class="nf">do_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_strategies</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="runner.do_config"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.do_config">[docs]</a>    <span class="k">def</span> <span class="nf">do_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;usage: \&#39;config \&#39; [option]&quot;&quot;&quot;</span>
 
+        <span class="k">if</span> <span class="n">option</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;error: no cofiguration option specified&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">option</span> <span class="o">==</span> <span class="s">&quot;auth&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accounts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Are you sure? Reconfiguring auth will wipe your current auth settings. [y/n]&quot;</span><span class="p">)</span>
+                    <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;y&quot;</span><span class="p">:</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Paste in your CoinbaseExchange API key:&quot;</span><span class="p">)</span>
+                        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">auth_key</span> <span class="o">=</span> <span class="nb">input</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Paste in your CoinbaseExchange API secret:&quot;</span><span class="p">)</span>
+                        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">auth_secret</span> <span class="o">=</span> <span class="nb">input</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Paste in your CoinbaseExchange API passphrase:&quot;</span><span class="p">)</span>
+                        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">input</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span> <span class="o">=</span> <span class="nb">input</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;key&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_key</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;secret&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_secret</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;password&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span><span class="p">)</span>
+                            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_path</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">config_file</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">authenticate</span><span class="p">()</span>
+                    <span class="k">elif</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;n&quot;</span><span class="p">:</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Exiting to main menu&quot;</span><span class="p">)</span>
+                        <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Paste in your CoinbaseExchange API key:&quot;</span><span class="p">)</span>
+                    <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">auth_key</span> <span class="o">=</span> <span class="nb">input</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Paste in your CoinbaseExchange API secret:&quot;</span><span class="p">)</span>
+                    <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">auth_secret</span> <span class="o">=</span> <span class="nb">input</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Paste in your CoinbaseExchange API passphrase:&quot;</span><span class="p">)</span>
+                    <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span> <span class="o">=</span> <span class="nb">input</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;key&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_key</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;secret&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_secret</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;auth&quot;</span><span class="p">,</span> <span class="s">&quot;password&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span><span class="p">)</span>
+                    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_path</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">config_file</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">authenticate</span><span class="p">()</span>
+
+            <span class="k">elif</span> <span class="n">option</span> <span class="o">==</span> <span class="s">&quot;default&quot;</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Type the filename (without .py) containing the class which inherits from bitraider.strategy:&quot;</span><span class="p">)</span>
+                <span class="n">option</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;default_strategy&quot;</span><span class="p">,</span> <span class="s">&quot;module&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Type the name of the class within &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; representing the strategy to load:&quot;</span><span class="p">)</span>
+                <span class="n">option</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                <span class="n">loaded_strategy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">loaded_strategy</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error: &quot;</span><span class="o">+</span><span class="n">loaded_strategy</span><span class="o">+</span><span class="s">&quot; is already loaded&quot;</span><span class="p">)</span>
+                        <span class="n">option</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                        <span class="n">loaded_strategy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s">&quot;default_strategy&quot;</span><span class="p">,</span> <span class="s">&quot;class&quot;</span><span class="p">,</span> <span class="n">loaded_strategy</span><span class="p">)</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_path</span><span class="p">,</span> <span class="s">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">config_file</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">load_strategy</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">loaded_strategy</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="runner.do_load"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.do_load">[docs]</a>    <span class="k">def</span> <span class="nf">do_load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Type the filename (without .py) containing the class which inherits from bitraider.strategy:&quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Type the name of the class within &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; representing the strategy to load:&quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="n">loaded_strategy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_strategy</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">loaded_strategy</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="runner.do_backtest"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.do_backtest">[docs]</a>    <span class="k">def</span> <span class="nf">do_backtest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">option</span><span class="p">):</span>
+        <span class="n">strategy_to_backtest</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the class name of the strategy to backtest, or press enter to</span><span class="se">\n</span><span class="s">&quot;</span>
+                <span class="s">&quot;backtest on the default strategy.&quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Performing backest on default strategy: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;default_strategy&quot;</span> <span class="p">,</span><span class="s">&quot;class&quot;</span><span class="p">)))</span>
+            <span class="n">strategy_to_backtest</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;default_strategy&quot;</span><span class="p">,</span> <span class="s">&quot;class&quot;</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">strategy_to_backtest</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+
+        <span class="n">usd</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="n">btc</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">days_back_in_time</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the number of days back in time to backtest on: &quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Performing backtest on default of 7 days.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">days_back_in_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Performing backtest on last &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">days_back_in_time</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; days.&quot;</span><span class="p">)</span>
+
+        <span class="n">curr_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">curr_timezone</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">curr_time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">86400</span><span class="o">*</span><span class="n">days_back_in_time</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">curr_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the initial USD amount:&quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using default starting USD amount of $1,000&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">usd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using starting USD amount of $&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">usd</span><span class="p">))</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the initial BTC amount:&quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using default starting BTC amount of 1&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">btc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using starting BTC amount of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">btc</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">strategy_to_backtest</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy_to_backtest</span><span class="p">]</span><span class="o">.</span><span class="n">exchange</span> <span class="o">=</span> <span class="n">cb_exchange_sim</span><span class="p">(</span><span class="n">start_usd</span><span class="o">=</span><span class="n">usd</span><span class="p">,</span> <span class="n">start_btc</span><span class="o">=</span><span class="n">btc</span><span class="p">)</span>
+            <span class="n">historic_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy_to_backtest</span><span class="p">]</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">get_historic_rates</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">,</span> <span class="n">granularity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy_to_backtest</span><span class="p">]</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">historic_data</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;API error: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">historic_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;message&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)))</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Unable to backtest&quot;</span><span class="p">)</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Backtesting from &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; to &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end_time</span><span class="p">))</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;with &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">historic_data</span><span class="p">))</span><span class="o">+</span><span class="s">&quot; timeslices of length &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy_to_backtest</span><span class="p">]</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; seconds each&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy_to_backtest</span><span class="p">]</span><span class="o">.</span><span class="n">backtest_strategy</span><span class="p">(</span><span class="n">historic_data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="runner.do_optimize"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.do_optimize">[docs]</a>    <span class="k">def</span> <span class="nf">do_optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+        <span class="n">usd</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="n">btc</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">days_back_in_time</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the class name of the strategy to be optimized:&quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="nb">input</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error: not found&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+        <span class="n">strategy_to_optimize</span> <span class="o">=</span> <span class="nb">input</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the timeframe to optimize for i.e. the time to simulate over:&quot;</span><span class="p">)</span>
+        <span class="n">days_back_in_time</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Performing optimization for default of last 7 days.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">days_back_in_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Performing optimization based on last &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">days_back_in_time</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; days.&quot;</span><span class="p">)</span>
+
+        <span class="n">curr_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">curr_timezone</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">curr_time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">86400</span><span class="o">*</span><span class="n">days_back_in_time</span><span class="p">)</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">curr_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the initial USD amount:&quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using default starting USD amount of $1,000&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">usd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using starting USD amount of $&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">usd</span><span class="p">))</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the initial BTC amount:&quot;</span><span class="p">)</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using default starting BTC amount of 1&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">btc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using starting BTC amount of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">btc</span><span class="p">))</span>
+
+        <span class="n">strategy</span> <span class="o">=</span> <span class="n">strategy_to_optimize</span>
+        <span class="n">strategy_attributes</span> <span class="o">=</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy</span><span class="p">])</span>
+        <span class="n">bounds_by_attribute</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Note: strategy interval cannot be optimized due to API restraints&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span><span class="o">.</span><span class="n">exchange</span> <span class="o">=</span> <span class="n">cb_exchange_sim</span><span class="p">(</span><span class="n">start_usd</span><span class="o">=</span><span class="n">usd</span><span class="p">,</span> <span class="n">start_btc</span><span class="o">=</span><span class="n">btc</span><span class="p">)</span>
+        <span class="n">historic_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">get_historic_rates</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">,</span> <span class="n">granularity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">historic_data</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;API error: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">historic_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;message&quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)))</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Unable to optimize. Try changing strategy&#39;s interval&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Optimizing based on time frame of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">start_time</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; to &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end_time</span><span class="p">))</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;with &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">historic_data</span><span class="p">))</span><span class="o">+</span><span class="s">&quot; timeslices of length &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; seconds each&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">strategy_attributes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s">&quot;_&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span> <span class="o">!=</span> <span class="s">&quot;interval&quot;</span><span class="p">:</span>
+                <span class="c"># Optimizing for interval would poll API too frequently</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the lower bound for attribute: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;, or press enter to skip:&quot;</span><span class="p">)</span>
+                <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">lower_bound</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the upper bound for attribute: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">attribute</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
+                    <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                    <span class="n">upper_bound</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the granularity of this attribute i.e. how many different values to try:&quot;</span><span class="p">)</span>
+                    <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+                    <span class="n">granularity</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">upper_bound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">lower_bound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">bounds_by_attribute</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">attribute</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;lower&quot;</span><span class="p">:</span><span class="n">lower_bound</span><span class="p">,</span> <span class="s">&quot;upper&quot;</span><span class="p">:</span><span class="n">upper_bound</span><span class="p">,</span> <span class="s">&quot;granularity&quot;</span><span class="p">:</span><span class="n">granularity</span><span class="p">}</span>
+                        <span class="c">#self.strategies[strategy][attribute] = float(lower_bound)</span>
+
+        <span class="n">attribute_vals_by_id</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">config_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c"># Initialize attribute_vals_by id</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">bounds_by_attribute</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">num_shades_of_attr</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bounds_by_attribute</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;granularity&quot;</span><span class="p">))</span>
+            <span class="n">increment</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">upper_bound</span><span class="p">)</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">))</span><span class="o">/</span><span class="n">num_shades_of_attr</span>
+            <span class="n">attr_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">shade</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_shades_of_attr</span><span class="p">):</span>
+                <span class="n">attribute_vals_by_id</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">config_id</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">attribute_vals_by_id</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">config_id</span><span class="p">)][</span><span class="n">attribute</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr_val</span>
+                <span class="n">config_id</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c"># Fill in all possible values for the attributes</span>
+        <span class="n">config_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">bounds_by_attribute</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">num_shades_of_attr</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">bounds_by_attribute</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;granularity&quot;</span><span class="p">))</span>
+            <span class="n">increment</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">upper_bound</span><span class="p">)</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">))</span><span class="o">/</span><span class="n">num_shades_of_attr</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">attr_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lower_bound</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">increment</span><span class="o">*</span><span class="n">step</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">shade</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_shades_of_attr</span><span class="p">):</span>
+                <span class="n">attribute_vals_by_id</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">config_id</span><span class="p">)][</span><span class="n">attribute</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr_val</span>
+                <span class="n">config_id</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">performance_by_id</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">performance_vs_mkt</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">strategy_performance</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">mkt_performance</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c"># Change the attribute values for this strategy, updating when the performance is highest</span>
+        <span class="k">for</span> <span class="n">configuration</span> <span class="ow">in</span> <span class="n">attribute_vals_by_id</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">attribute_vals_by_id</span><span class="p">[</span><span class="n">configuration</span><span class="p">]:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy</span><span class="p">],</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">attribute_vals_by_id</span><span class="p">[</span><span class="n">configuration</span><span class="p">][</span><span class="n">attribute</span><span class="p">])</span>
+                <span class="n">performance_vs_mkt</span><span class="p">,</span> <span class="n">strategy_performance</span><span class="p">,</span> <span class="n">mkt_performance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">strategy</span><span class="p">]</span><span class="o">.</span><span class="n">backtest_strategy</span><span class="p">(</span><span class="n">historic_data</span><span class="p">)</span>
+                <span class="n">performance_by_id</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">configuration</span><span class="p">)]</span> <span class="o">=</span> <span class="n">performance_vs_mkt</span>
+
+        <span class="n">best_config</span> <span class="o">=</span> <span class="s">&quot;0&quot;</span>
+        <span class="k">for</span> <span class="n">configuration</span> <span class="ow">in</span> <span class="n">performance_by_id</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">performance_by_id</span><span class="p">[</span><span class="n">configuration</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">performance_by_id</span><span class="p">[</span><span class="n">best_config</span><span class="p">]:</span>
+                <span class="n">best_config</span> <span class="o">=</span> <span class="n">configuration</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;The best performing strategy configuration is: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">attribute_vals_by_id</span><span class="p">[</span><span class="n">best_config</span><span class="p">]))</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;With a performance vs market of: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">performance_by_id</span><span class="p">[</span><span class="n">best_config</span><span class="p">]))</span>
+
+    <span class="c"># End python cmd funtions</span>
+</div>
+<div class="viewcode-block" id="runner.authenticate"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.authenticate">[docs]</a>    <span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span> <span class="o">=</span> <span class="n">cb_exchange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auth_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_secret</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accounts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">list_accounts</span><span class="p">()</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Error! Only unauthorized endpoints are available.&quot;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;error: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;If you would like bitraider to walk you through authentication, enter the commands: </span><span class="se">\&#39;</span><span class="s">config</span><span class="se">\&#39;</span><span class="s"> &gt; </span><span class="se">\&#39;</span><span class="s">auth</span><span class="se">\&#39;</span><span class="s">&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="runner.set_ticker_on"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.set_ticker_on">[docs]</a>    <span class="k">def</span> <span class="nf">set_ticker_on</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">strategy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">lower_bound</span> <span class="o">=</span> <span class="n">start_time</span>
+        <span class="n">upper_bound</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="n">strategy</span><span class="o">.</span><span class="n">interval</span>
+        <span class="n">elapsed_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">last_intervals_trades</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">curr_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">curr_time</span> <span class="o">-</span> <span class="n">start_time</span>
+            <span class="k">if</span> <span class="n">elapsed_time</span> <span class="o">%</span> <span class="n">strategy</span><span class="o">.</span><span class="n">interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># if we&#39;ve reached a new interval, calculate data for the last interval and pass</span>
+                <span class="c"># it onto the strategy</span>
+                <span class="n">latest_trades</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">get_trades</span><span class="p">(</span><span class="s">&#39;BTC-USD&#39;</span><span class="p">)</span>
+                <span class="n">interval_data</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">last_intervals_low</span> <span class="o">=</span> <span class="mi">999999999</span>
+                <span class="n">last_intervals_high</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">last_intervals_close</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">last_intervals_close</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="n">last_intervals_volume</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">for</span> <span class="n">trade</span> <span class="ow">in</span> <span class="n">latest_trades</span><span class="p">:</span>
+                    <span class="c"># starting with the most recent trade, get trades for the last interval</span>
+                    <span class="n">datestring</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">trade</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;time&quot;</span><span class="p">))[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+                    <span class="n">trade_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">calendar</span><span class="o">.</span><span class="n">timegm</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">datestring</span><span class="p">,</span> <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s"> %H:%M:%S.</span><span class="si">%f</span><span class="s">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()))</span>
+                    <span class="k">if</span> <span class="n">trade_time</span> <span class="o">&gt;=</span> <span class="n">lower_bound</span> <span class="ow">and</span> <span class="n">trade_time</span> <span class="o">&lt;=</span> <span class="n">upper_bound</span><span class="p">:</span>
+                        <span class="n">last_intervals_trades</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trade</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">trade</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;price&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">last_intervals_high</span><span class="p">:</span>
+                            <span class="n">last_intervals_high</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">trade</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;price&#39;</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">trade</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;price&#39;</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">last_intervals_low</span><span class="p">:</span>
+                            <span class="n">last_intervals_low</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">trade</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;price&#39;</span><span class="p">))</span>
+                        <span class="n">last_intervals_volume</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">trade</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;size&#39;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">last_intervals_trades</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">last_intervals_close</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">last_intervals_trades</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;price&#39;</span><span class="p">))</span>
+                    <span class="n">last_intervals_open</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">last_intervals_trades</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;price&#39;</span><span class="p">))</span>
+                    <span class="n">interval_start_time</span> <span class="o">=</span> <span class="n">curr_time</span> <span class="o">-</span> <span class="n">strategy</span><span class="o">.</span><span class="n">interval</span>
+                    <span class="n">interval_data</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">interval_start_time</span><span class="p">,</span> <span class="n">last_intervals_low</span><span class="p">,</span> <span class="n">last_intervals_high</span><span class="p">,</span>
+                    <span class="n">last_intervals_open</span><span class="p">,</span> <span class="n">last_intervals_close</span><span class="p">,</span> <span class="n">last_intervals_volume</span><span class="p">])</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;last_intervals_trades: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">last_intervals_trades</span><span class="p">))</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;elapsed: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">elapsed_time</span><span class="p">))</span>
+                <span class="n">last_intervals_trades</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">lower_bound</span> <span class="o">+=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">interval</span>
+                <span class="n">upper_bound</span> <span class="o">+=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">interval</span>
+
+                <span class="c"># Here&#39;s where the magic happens:</span>
+                <span class="c">#strategy.trade(interval_data)</span>
+</div>
 <div class="viewcode-block" id="runner.run"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c"># Time Configuration</span>
-        <span class="n">curr_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="c"># Seconds since Jan 1st, 1970</span>
-        <span class="n">curr_timezone</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s">&quot;US/Central&quot;</span><span class="p">)</span>
-
-        <span class="nb">input</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
-        <span class="k">print</span> <span class="s">&quot;Type </span><span class="se">\&#39;</span><span class="s">help</span><span class="se">\&#39;</span><span class="s"> to see a list of all possible commands.&quot;</span>
-        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
-            <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;help&quot;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">print_all_commands</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;price&quot;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">print_curr_price</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;run&quot;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">set_ticker_on</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;exit&quot;</span><span class="p">:</span>
-                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;load&quot;</span><span class="p">:</span>
-                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Type the filename (without .py) containing the class which inherits from bitraider.strategy:&quot;</span><span class="p">)</span>
-                <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
-                <span class="n">filename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Type the name of the class within &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; representing the strategy to load:&quot;</span><span class="p">)</span>
-                <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
-                <span class="n">loaded_strategy</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">load_strategy</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">loaded_strategy</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;backtest&quot;</span><span class="p">:</span>
-                <span class="n">usd</span> <span class="o">=</span> <span class="mi">1000</span>
-                <span class="n">btc</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="n">days_back_in_time</span> <span class="o">=</span> <span class="mi">7</span>
-                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the number of days back in time to backtest on: &quot;</span><span class="p">)</span>
-                <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Performing backtest on default of 7 days.&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">days_back_in_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Performing backtest on last &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">days_back_in_time</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; days.&quot;</span><span class="p">)</span>
-
-                <span class="n">curr_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">tz</span><span class="o">=</span><span class="n">curr_timezone</span><span class="p">)</span>
-                <span class="n">start_time</span> <span class="o">=</span> <span class="n">curr_time</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">86400</span><span class="o">*</span><span class="n">days_back_in_time</span><span class="p">)</span>
-                <span class="n">start_time</span> <span class="o">=</span> <span class="n">start_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
-                <span class="n">end_time</span> <span class="o">=</span> <span class="n">curr_time</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
-                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the initial USD amount:&quot;</span><span class="p">)</span>
-                <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using default starting USD amount of $1,000&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">usd</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using starting USD amount of $&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">usd</span><span class="p">))</span>
-                
-                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Enter the initial BTC amount:&quot;</span><span class="p">)</span>
-                <span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">input</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
-                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using default starting BTC amount of 1&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">btc</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Using starting BTC amount of &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">btc</span><span class="p">))</span>
-
-                <span class="n">historic_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">get_historic_rates</span><span class="p">(</span><span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">,</span> <span class="n">granularity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">interval</span><span class="p">)</span>
-
-                <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">backtest_strategy</span><span class="p">(</span><span class="n">historic_data</span><span class="o">=</span><span class="n">historic_data</span><span class="p">,</span> <span class="n">start_usd</span><span class="o">=</span><span class="n">usd</span><span class="p">,</span> <span class="n">start_btc</span><span class="o">=</span><span class="n">btc</span><span class="p">,</span>
-                        <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">)</span>
-    
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">curr_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="c"># Seconds since Jan 1st, 1970</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curr_timezone</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s">&quot;US/Central&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmdloop</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="runner.print_curr_price"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.print_curr_price">[docs]</a>    <span class="k">def</span> <span class="nf">print_curr_price</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Print the most recent price.&quot;&quot;&quot;</span>
         <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">get_last_trade</span><span class="p">(</span><span class="s">&#39;BTC-USD&#39;</span><span class="p">)[</span><span class="s">&#39;price&#39;</span><span class="p">])</span>
-</div>
-<div class="viewcode-block" id="runner.print_all_commands"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.print_all_commands">[docs]</a>    <span class="k">def</span> <span class="nf">print_all_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Print all commands with their descriptions.&quot;&quot;&quot;</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">:  </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">commands</span><span class="o">.</span><span class="n">items</span><span class="p">()]))</span>
 </div>
 <div class="viewcode-block" id="runner.load_strategy"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.runner.load_strategy">[docs]</a>    <span class="k">def</span> <span class="nf">load_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">cls</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Load a user-defined strategy from a file.</span>
@@ -200,18 +474,20 @@
 <span class="sd">        \n`cls`: the classname within the file to load</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">import_string</span> <span class="o">=</span> <span class="n">module</span><span class="o">+</span><span class="s">&quot;.&quot;</span><span class="o">+</span><span class="n">cls</span>
+        <span class="n">classname</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">cls</span><span class="p">)</span>
         <span class="n">_temp</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
         <span class="n">loaded_strategy_</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_temp</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span>
         <span class="n">instance_of_loaded_strategy</span> <span class="o">=</span> <span class="n">loaded_strategy_</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">instance_of_loaded_strategy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategies</span><span class="p">[</span><span class="n">classname</span><span class="p">]</span> <span class="o">=</span> <span class="n">instance_of_loaded_strategy</span>
         <span class="k">print</span><span class="p">(</span><span class="s">&quot;Loaded strategy: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">cls</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; from file: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">module</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;.py&quot;</span><span class="p">)</span>
-    </div></div>
+</div></div>
 <div class="viewcode-block" id="run"><a class="viewcode-back" href="../../bitraider.html#bitraider.trader_template.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">():</span>
     <span class="n">my_runner</span> <span class="o">=</span> <span class="n">runner</span><span class="p">()</span>
     <span class="n">my_runner</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </div>
 <span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s">&quot;__main__&quot;</span><span class="p">:</span>
-   <span class="n">run</span><span class="p">()</span> 
+    <span class="n">my_runner</span> <span class="o">=</span> <span class="n">runner</span><span class="p">()</span>
+    <span class="n">my_runner</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 
           </div>

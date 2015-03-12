@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>bitraider.strategy &mdash; bitraider 0.0.3 documentation</title>
+    <title>bitraider.strategy &mdash; bitraider 0.0.4 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.0.3',
+        VERSION:     '0.0.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="bitraider 0.0.3 documentation" href="../../index.html" />
+    <link rel="top" title="bitraider 0.0.4 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">bitraider 0.0.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">bitraider 0.0.4 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -58,8 +58,8 @@
 <span class="kn">import</span> <span class="nn">numpy</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
 <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
-<span class="kn">from</span> <span class="nn">cbexchange</span> <span class="kn">import</span> <span class="n">cb_exchange</span> <span class="k">as</span> <span class="n">cb_exchange</span>
-<span class="kn">from</span> <span class="nn">cbexchange</span> <span class="kn">import</span> <span class="n">CoinbaseExchangeAuth</span>
+<span class="kn">from</span> <span class="nn">exchange</span> <span class="kn">import</span> <span class="n">cb_exchange</span> <span class="k">as</span> <span class="n">cb_exchange</span>
+<span class="kn">from</span> <span class="nn">exchange</span> <span class="kn">import</span> <span class="n">CoinbaseExchangeAuth</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
 
 <div class="viewcode-block" id="strategy"><a class="viewcode-back" href="../../bitraider.html#bitraider.strategy.strategy">[docs]</a><span class="k">class</span> <span class="nc">strategy</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -67,7 +67,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ABCMeta</span>
-    
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&quot;default name&quot;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Constructor for an abstract strategy. You can modify it as needed.</span>
 
@@ -76,27 +76,65 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">times_recalculated</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="nd">@abstractmethod</span>
-<div class="viewcode-block" id="strategy.backtest_strategy"><a class="viewcode-back" href="../../bitraider.html#bitraider.strategy.strategy.backtest_strategy">[docs]</a>    <span class="k">def</span> <span class="nf">backtest_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">historical_data</span><span class="p">,</span> <span class="n">start_usd</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">start_btc</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Loop through `historical_data`, a list of lists formated as follows:\n</span>
-<span class="sd">        [ </span>
-<span class="sd">            \n\t[&quot;2014-11-07 22:19:28.578544+00&quot;, &quot;0.32&quot;, &quot;4.2&quot;, &quot;0.35&quot;, &quot;4.2&quot;, &quot;12.3&quot;],</span>
-<span class="sd">                \n\t\t...</span>
-<span class="sd">        \n]</span>
-<span class="sd">        \nEach inner list contains:[time, low, high, open, close]</span>
+<div class="viewcode-block" id="strategy.trade"><a class="viewcode-back" href="../../bitraider.html#bitraider.strategy.strategy.trade">[docs]</a>    <span class="k">def</span> <span class="nf">trade</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeslice</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform operations on a timeslice.</span>
 
-<span class="sd">        \nThis method should loop through historical_data, making buy or sell decisions based on available data. You can use the static utility methods in strategy to assist you. You should also format this method to accept:</span>
-<span class="sd">        \n`start_usd`: the starting amount of USD for this simulation</span>
-<span class="sd">        \n`start_btc`: the starting amount of BTC for this simulation</span>
+<span class="sd">        \n`timeslice`: a section of trade data with time length equal to the strategy&#39;s interval, formatted as follows:</span>
+<span class="sd">        \n[time, low, high, open, close, volume]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="strategy.backtest_strategy"><a class="viewcode-back" href="../../bitraider.html#bitraider.strategy.strategy.backtest_strategy">[docs]</a>    <span class="k">def</span> <span class="nf">backtest_strategy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">historic_data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns performance of a strategy vs market performance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Reverse the data since Coinbase returns it in reverse chronological</span>
+        <span class="c"># now historic_data strarts with the oldest entry</span>
+        <span class="n">historic_data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">historic_data</span><span class="p">))</span>
+        <span class="n">earliest_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">historic_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">latest_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">historic_data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">start_price</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">historic_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+        <span class="n">end_price</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">historic_data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+        <span class="n">market_performance</span> <span class="o">=</span> <span class="p">((</span><span class="n">end_price</span><span class="o">-</span><span class="n">start_price</span><span class="p">)</span><span class="o">/</span><span class="n">start_price</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Running simulation on historic data. This may take some time....&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">timeslice</span> <span class="ow">in</span> <span class="n">historic_data</span><span class="p">:</span>
+            <span class="c"># Display what percent through the data we are</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">historic_data</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">timeslice</span><span class="p">)</span>
+            <span class="n">percent</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">historic_data</span><span class="p">)))</span><span class="o">*</span><span class="mi">100</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\r</span><span class="si">%d%%</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">percent</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">trade</span><span class="p">(</span><span class="n">timeslice</span><span class="p">)</span>
+
+        <span class="c"># Calculate performance</span>
+        <span class="n">end_amt_no_trades</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">start_usd</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">end_price</span><span class="p">))</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">start_btc</span><span class="p">)</span>
+        <span class="n">end_amt</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">usd_bal</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">end_price</span><span class="p">))</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">btc_bal</span><span class="p">)</span>
+        <span class="n">start_amt</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">start_usd</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">start_price</span><span class="p">))</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">start_btc</span><span class="p">)</span>
+        <span class="n">strategy_performance</span> <span class="o">=</span> <span class="p">((</span><span class="n">end_amt</span><span class="o">-</span><span class="n">start_amt</span><span class="p">)</span><span class="o">/</span><span class="n">start_amt</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Times recalculated: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">times_recalculated</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Times bought: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">times_bought</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Times sold: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exchange</span><span class="o">.</span><span class="n">times_sold</span><span class="p">))</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;The Market&#39;s performance: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">market_performance</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; %&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Strategy&#39;s performance: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">strategy_performance</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; %&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Account&#39;s ending value if no trades were made: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end_amt_no_trades</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; BTC&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Account&#39;s ending value with this strategy: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">end_amt</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; BTC&quot;</span><span class="p">)</span>
+        <span class="n">strategy_performance_vs_market</span> <span class="o">=</span> <span class="n">strategy_performance</span> <span class="o">-</span> <span class="n">market_performance</span>
+        <span class="k">if</span> <span class="n">strategy_performance</span> <span class="o">&gt;</span> <span class="n">market_performance</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Congratulations! This strategy has beat the market by: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">strategy_performance_vs_market</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; %&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">strategy_performance</span> <span class="o">&lt;</span> <span class="n">market_performance</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;This strategy has preformed: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">strategy_performance_vs_market</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; % worse than market.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">strategy_performance_vs_market</span><span class="p">,</span> <span class="n">strategy_performance</span><span class="p">,</span> <span class="n">market_performance</span>
 </div>
     <span class="nd">@staticmethod</span>
 <div class="viewcode-block" id="strategy.calculate_historic_data"><a class="viewcode-back" href="../../bitraider.html#bitraider.strategy.strategy.calculate_historic_data">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_historic_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pivot</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns average price weighted according to volume, and the number of bitcoins traded</span>
 <span class="sd">            above and below a price point, called a pivot.\n</span>
-<span class="sd">        </span>
+
 <span class="sd">        \npivot: the price used for returning volume above and below</span>
 <span class="sd">        \ndata: a list of lists formated as follows [time, low, high, open, close]</span>
 <span class="sd">        \n[</span>
@@ -117,7 +155,7 @@
                 <span class="n">max_prie</span> <span class="o">=</span> <span class="n">timeslice</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">min_price</span> <span class="o">&gt;</span> <span class="n">timeslice</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
                 <span class="n">min_price</span> <span class="o">=</span> <span class="n">timeslice</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            
+
             <span class="n">closing_price</span> <span class="o">=</span> <span class="n">timeslice</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
             <span class="n">volume</span> <span class="o">=</span> <span class="n">timeslice</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">closing_price</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">discrete_prices</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -132,7 +170,7 @@
         <span class="n">fltprices</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">discrete_prices</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
         <span class="n">fltvolumes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">discrete_prices</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
         <span class="n">np_discrete_prices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fltprices</span><span class="p">)</span>
-        <span class="n">np_volume_per_price</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fltvolumes</span><span class="p">)</span> 
+        <span class="n">np_volume_per_price</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fltvolumes</span><span class="p">)</span>
         <span class="n">weighted_avg</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">np_discrete_prices</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">np_volume_per_price</span><span class="p">)</span>
         <span class="n">num_above</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">num_below</span> <span class="o">=</span> <span class="mi">0</span>

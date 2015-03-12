@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>bitraider.cbexchange &mdash; bitraider 0.0.4 documentation</title>
+    <title>bitraider.exchange &mdash; bitraider 0.0.4 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -50,17 +50,103 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <h1>Source code for bitraider.cbexchange</h1><div class="highlight"><pre>
+  <h1>Source code for bitraider.exchange</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">hmac</span><span class="o">,</span> <span class="nn">hashlib</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">requests</span><span class="o">,</span> <span class="nn">base64</span>
 <span class="kn">from</span> <span class="nn">requests.auth</span> <span class="kn">import</span> <span class="n">AuthBase</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
 
-<span class="c"># Create custom authentication for Exchange</span>
-<div class="viewcode-block" id="CoinbaseExchangeAuth"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.CoinbaseExchangeAuth">[docs]</a><span class="k">class</span> <span class="nc">CoinbaseExchangeAuth</span><span class="p">(</span><span class="n">AuthBase</span><span class="p">):</span>
+<div class="viewcode-block" id="exchange"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.exchange">[docs]</a><span class="k">class</span> <span class="nc">exchange</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">ABCMeta</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="exchange.place_order"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.exchange.place_order">[docs]</a>    <span class="k">def</span> <span class="nf">place_order</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+</div></div>
+<div class="viewcode-block" id="cb_exchange_sim"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange_sim">[docs]</a><span class="k">class</span> <span class="nc">cb_exchange_sim</span><span class="p">(</span><span class="n">exchange</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class used for backtesting&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_btc</span><span class="p">,</span> <span class="n">start_usd</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_usd</span> <span class="o">=</span> <span class="n">start_usd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_btc</span> <span class="o">=</span> <span class="n">start_btc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">btc_bal</span> <span class="o">=</span> <span class="n">start_btc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">usd_bal</span> <span class="o">=</span> <span class="n">start_usd</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fee_percent</span> <span class="o">=</span> <span class="mf">0.25</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">times_bought</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">times_sold</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="s">&#39;https://api.exchange.coinbase.com/&#39;</span>
+
+<div class="viewcode-block" id="cb_exchange_sim.get_historic_rates"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange_sim.get_historic_rates">[docs]</a>    <span class="k">def</span> <span class="nf">get_historic_rates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">granularity</span><span class="p">,</span> <span class="n">product_id</span><span class="o">=</span><span class="s">&#39;BTC-USD&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a historic rates for a product. Rates are returned in grouped</span>
+<span class="sd">        buckets based on requested granularity&quot;&quot;&quot;</span>
+        <span class="n">params</span><span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;start&#39;</span><span class="p">:</span> <span class="n">start_time</span><span class="p">,</span>
+            <span class="s">&#39;end&#39;</span><span class="p">:</span> <span class="n">end_time</span><span class="p">,</span>
+            <span class="s">&#39;granularity&#39;</span><span class="p">:</span> <span class="n">granularity</span>
+        <span class="p">}</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;products/&#39;</span> <span class="o">+</span> <span class="n">product_id</span> <span class="o">+</span> <span class="s">&#39;/candles&#39;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">rDict</span>
+</div>
+<div class="viewcode-block" id="cb_exchange_sim.get_last_trade"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange_sim.get_last_trade">[docs]</a>    <span class="k">def</span> <span class="nf">get_last_trade</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get snapshot information about the last trade (tick)&quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;products/&#39;</span> <span class="o">+</span> <span class="n">product_id</span> <span class="o">+</span> <span class="s">&#39;/ticker&#39;</span><span class="p">)</span>
+        <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">rDict</span>
+</div>
+<div class="viewcode-block" id="cb_exchange_sim.place_order"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange_sim.place_order">[docs]</a>    <span class="k">def</span> <span class="nf">place_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">price</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">product_id</span><span class="p">,</span> <span class="n">historic_timeslice</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Place an order</span>
+
+<span class="sd">        For buy orders, we will hold price x size x (1 + fee-percent) USD. For sell orders,</span>
+<span class="sd">        we will hold the number of Bitcoin you wish to sell. Actual fees are assessed at time of trade.</span>
+<span class="sd">        If you cancel a partially filled or unfilled order, any remaining funds will be released from hold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;size&#39;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
+            <span class="s">&#39;price&#39;</span><span class="p">:</span> <span class="n">price</span><span class="p">,</span>
+            <span class="s">&#39;side&#39;</span><span class="p">:</span> <span class="n">side</span><span class="p">,</span>
+            <span class="s">&#39;product_id&#39;</span><span class="p">:</span> <span class="n">product_id</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">currprice</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_last_trade</span><span class="p">(</span><span class="n">product_id</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;price&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">historic_timeslice</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">currprice</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">historic_timeslice</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s">&quot;buy&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">usd_bal</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="n">size</span><span class="o">*</span><span class="n">price</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">currprice</span> <span class="o">&lt;=</span> <span class="n">price</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">usd_bal</span> <span class="o">-=</span> <span class="p">(</span><span class="n">size</span><span class="o">*</span><span class="n">currprice</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">btc_bal</span> <span class="o">+=</span> <span class="n">size</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">times_bought</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Buy of: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; BTC made at price: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">currprice</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># TODO: put buy in holds</span>
+                    <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Insufficient funds&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s">&quot;sell&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">btc_bal</span> <span class="o">&gt;=</span> <span class="n">size</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">currprice</span> <span class="o">&gt;=</span> <span class="n">price</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">usd_bal</span> <span class="o">+=</span> <span class="p">(</span><span class="n">size</span><span class="o">*</span><span class="n">currprice</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">btc_bal</span> <span class="o">-=</span> <span class="n">size</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">times_sold</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Sell of: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; BTC made at price: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">currprice</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># TODO: put sell in holds</span>
+                    <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;Insufficient funds&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+<span class="c"># Create custom authentication for Exchange</span></div></div>
+<div class="viewcode-block" id="CoinbaseExchangeAuth"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.CoinbaseExchangeAuth">[docs]</a><span class="k">class</span> <span class="nc">CoinbaseExchangeAuth</span><span class="p">(</span><span class="n">AuthBase</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">,</span> <span class="n">secret_key</span><span class="p">,</span> <span class="n">passphrase</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">secret_key</span> <span class="o">=</span> <span class="n">secret_key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">passphrase</span> <span class="o">=</span> <span class="n">passphrase</span>
-    
+
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
         <span class="n">timestamp</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
         <span class="n">message</span> <span class="o">=</span> <span class="n">timestamp</span> <span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">+</span> <span class="n">request</span><span class="o">.</span><span class="n">path_url</span> <span class="o">+</span> <span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">body</span> <span class="ow">or</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
@@ -76,8 +162,9 @@
             <span class="p">})</span>
         <span class="k">return</span> <span class="n">request</span>
 </div>
-<div class="viewcode-block" id="cb_exchange"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange">[docs]</a><span class="k">class</span> <span class="nc">cb_exchange</span><span class="p">():</span>
-    
+<div class="viewcode-block" id="cb_exchange"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange">[docs]</a><span class="k">class</span> <span class="nc">cb_exchange</span><span class="p">(</span><span class="n">exchange</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;CoinbaseExchange API Wrapper&quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">secret</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="o">=</span><span class="n">key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">secret</span><span class="o">=</span><span class="n">secret</span>
@@ -86,34 +173,34 @@
         <span class="k">if</span> <span class="n">password</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="n">CoinbaseExchangeAuth</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">secret</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="s">&#39;https://api.exchange.coinbase.com/&#39;</span>
-         
-<div class="viewcode-block" id="cb_exchange.list_accounts"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.list_accounts">[docs]</a>    <span class="k">def</span> <span class="nf">list_accounts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="cb_exchange.list_accounts"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.list_accounts">[docs]</a>    <span class="k">def</span> <span class="nf">list_accounts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a list of trading accounts&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;accounts&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_account"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_account">[docs]</a>    <span class="k">def</span> <span class="nf">get_account</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_id</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_account"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_account">[docs]</a>    <span class="k">def</span> <span class="nf">get_account</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get information for a single account&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;accounts/&#39;</span> <span class="o">+</span> <span class="n">account_id</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_account_history"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_account_history">[docs]</a>    <span class="k">def</span> <span class="nf">get_account_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_id</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_account_history"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_account_history">[docs]</a>    <span class="k">def</span> <span class="nf">get_account_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;List account activity. Items are paginated and sorted latest first.&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;accounts/&#39;</span> <span class="o">+</span> <span class="n">account_id</span> <span class="o">+</span> <span class="s">&#39;/ledger&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_holds"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_holds">[docs]</a>    <span class="k">def</span> <span class="nf">get_holds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_id</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Holds are placed on an account for any active orders. As an order </span>
+<div class="viewcode-block" id="cb_exchange.get_holds"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_holds">[docs]</a>    <span class="k">def</span> <span class="nf">get_holds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">account_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Holds are placed on an account for any active orders. As an order</span>
 <span class="sd">        is filled, the hold amount is updated. If ad order is canceled, any</span>
 <span class="sd">        remaining hold is removed.&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;accounts/&#39;</span> <span class="o">+</span> <span class="n">account_id</span> <span class="o">+</span> <span class="s">&#39;/holds&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.place_order"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.place_order">[docs]</a>    <span class="k">def</span> <span class="nf">place_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">price</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.place_order"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.place_order">[docs]</a>    <span class="k">def</span> <span class="nf">place_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">price</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">side</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Place an order&quot;&quot;&quot;</span>
         <span class="n">order</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s">&#39;size&#39;</span><span class="p">:</span> <span class="n">size</span><span class="p">,</span>
@@ -124,46 +211,46 @@
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;orders&#39;</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
-    </div>
-<div class="viewcode-block" id="cb_exchange.cancel_order"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.cancel_order">[docs]</a>    <span class="k">def</span> <span class="nf">cancel_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order_id</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="cb_exchange.cancel_order"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.cancel_order">[docs]</a>    <span class="k">def</span> <span class="nf">cancel_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Cancel an order&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;orders/&#39;</span> <span class="o">+</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.list_open_orders"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.list_open_orders">[docs]</a>    <span class="k">def</span> <span class="nf">list_open_orders</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.list_open_orders"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.list_open_orders">[docs]</a>    <span class="k">def</span> <span class="nf">list_open_orders</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;List currently open orders&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;orders&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
-    </div>
-<div class="viewcode-block" id="cb_exchange.get_order"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_order">[docs]</a>    <span class="k">def</span> <span class="nf">get_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order_id</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="cb_exchange.get_order"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_order">[docs]</a>    <span class="k">def</span> <span class="nf">get_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a single order&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;orders/&#39;</span> <span class="o">+</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loa</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.list_fills"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.list_fills">[docs]</a>    <span class="k">def</span> <span class="nf">list_fills</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.list_fills"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.list_fills">[docs]</a>    <span class="k">def</span> <span class="nf">list_fills</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a list of recent fills&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;fills&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.transfer"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.transfer">[docs]</a>    <span class="k">def</span> <span class="nf">transfer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.transfer"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.transfer">[docs]</a>    <span class="k">def</span> <span class="nf">transfer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Move funds to/from Coinbase Exchange and Coinbase account&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;transfers&#39;</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 
     <span class="c"># Unauthenticated endpoints below</span>
-    </div>
-<div class="viewcode-block" id="cb_exchange.get_products"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_products">[docs]</a>    <span class="k">def</span> <span class="nf">get_products</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="cb_exchange.get_products"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_products">[docs]</a>    <span class="k">def</span> <span class="nf">get_products</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a list of available currency pairs for trading&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;products&#39;</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_order_book"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_order_book">[docs]</a>    <span class="k">def</span> <span class="nf">get_order_book</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_order_book"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_order_book">[docs]</a>    <span class="k">def</span> <span class="nf">get_order_book</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a list of open orders for a product. Amount of detail</span>
 <span class="sd">        shown can be customized with the level parameter.&quot;&quot;&quot;</span>
         <span class="n">params</span><span class="o">=</span> <span class="p">{</span>
@@ -173,19 +260,19 @@
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_last_trade"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_last_trade">[docs]</a>    <span class="k">def</span> <span class="nf">get_last_trade</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_last_trade"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_last_trade">[docs]</a>    <span class="k">def</span> <span class="nf">get_last_trade</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get snapshot information about the last trade (tick)&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;products/&#39;</span> <span class="o">+</span> <span class="n">product_id</span> <span class="o">+</span> <span class="s">&#39;/ticker&#39;</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_trades"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_trades">[docs]</a>    <span class="k">def</span> <span class="nf">get_trades</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_trades"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_trades">[docs]</a>    <span class="k">def</span> <span class="nf">get_trades</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a paginated list of latest trades for a product&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;products/&#39;</span> <span class="o">+</span> <span class="n">product_id</span> <span class="o">+</span> <span class="s">&#39;/trades&#39;</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_historic_rates"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_historic_rates">[docs]</a>    <span class="k">def</span> <span class="nf">get_historic_rates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">granularity</span><span class="p">,</span> <span class="n">product_id</span><span class="o">=</span><span class="s">&#39;BTC-USD&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_historic_rates"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_historic_rates">[docs]</a>    <span class="k">def</span> <span class="nf">get_historic_rates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">,</span> <span class="n">granularity</span><span class="p">,</span> <span class="n">product_id</span><span class="o">=</span><span class="s">&#39;BTC-USD&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a historic rates for a product. Rates are returned in grouped</span>
 <span class="sd">        buckets based on requested granularity&quot;&quot;&quot;</span>
         <span class="n">params</span><span class="o">=</span> <span class="p">{</span>
@@ -197,19 +284,19 @@
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_24_hour_stats"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_24_hour_stats">[docs]</a>    <span class="k">def</span> <span class="nf">get_24_hour_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_24_hour_stats"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_24_hour_stats">[docs]</a>    <span class="k">def</span> <span class="nf">get_24_hour_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">product_id</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get 24 hour stats for the product&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;products/&#39;</span> <span class="o">+</span> <span class="n">product_id</span> <span class="o">+</span> <span class="s">&#39;/stats&#39;</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_currencies"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_currencies">[docs]</a>    <span class="k">def</span> <span class="nf">get_currencies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_currencies"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_currencies">[docs]</a>    <span class="k">def</span> <span class="nf">get_currencies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a list of known currencies&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;currencies&#39;</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">rDict</span>
 </div>
-<div class="viewcode-block" id="cb_exchange.get_time"><a class="viewcode-back" href="../../bitraider.html#bitraider.cbexchange.cb_exchange.get_time">[docs]</a>    <span class="k">def</span> <span class="nf">get_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="cb_exchange.get_time"><a class="viewcode-back" href="../../bitraider.html#bitraider.exchange.cb_exchange.get_time">[docs]</a>    <span class="k">def</span> <span class="nf">get_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get the API server time&quot;&quot;&quot;</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">+</span> <span class="s">&#39;time&#39;</span><span class="p">)</span>
         <span class="n">rDict</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>

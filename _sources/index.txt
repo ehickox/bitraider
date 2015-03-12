@@ -7,14 +7,14 @@ Welcome to bitraider's documentation!
 =====================================
 A Library of tools for algorithmic Bitcoin trading in Python. Bitraider includes a Coinbase 
 Exchange API wrapper, a CLI dashboard for backtesting or running a trader, and an abstract
-strategy object that enables you to implement different trading techniques.
+strategy class that enables you to implement different trading techniques.
 
 Quickstart:
 -----------
 
 1::
     
-    pip install bitraider
+    $pip install bitraider
 
 2. Create a new directory in which your trader will reside:
 ::
@@ -25,32 +25,35 @@ Quickstart:
 
     $cd example_trader
 
-3. Create an `auth.txt` containing your Coinbase API key, secret, and passphrase on lines 1, 2, and 3 respectively.
+3. Create a class that inherits from bitraider.strategy. Implement all necessary functions. See `example_strategy.py` for a more thorough example.
 ::
 
-    $vim auth.txt
+    $vim mystrategy.py
 
-In auth.txt:
-::
-
-    MY-API-KEY-HERE
-    MY-API-SECRET-HERE
-    MY-API-PASSPHRASE-HERE
-
-
-4. Create a class in a Python file that inherits from strategy. Implement all necessary functions. For Example:
 ::
 
     from bitraider import strategy as strategy
 
     class my_strategy(strategy):
 
-        def backtest_strategy(self, historical_data, start_btc, start_usd):
-            for timeslice in historical_data:
-                pass
+        def __init__(self):
+            self.interval = 60
+            # Look at every 60 seconds, required
+            self.time_from_start = 8600
+            # Time needed to have a baseline
+            self.any_attribute = 0.5
+            self.current_average = 0
+            self.time_elapsed = 0
 
+        def trade(self, timeslice):
+            # This will run in a loop for each timeslice
+            # Increment time elapsed
+            self.time_elapsed += self.interval
+            if self.time_elapsed % self.time_from_start == 0:
+                # recalculate average
+            pass
 
-5. Run
+4. Run
 ::
 
     $bitraider
@@ -61,7 +64,7 @@ The bitraider package contains the following subpackages
 
 1. strategy: a module containing what a strategy class should look like
 
-2. cbexchange: a module containing cb_exchange, a CoinbaseExchange API Wrapper
+2. exchange: a module containing cb_exchange, a CoinbaseExchange API Wrapper
 
 3. trader_template: a terminal-style dashboard for backtesting or running trading strategies.
 
