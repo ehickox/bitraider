@@ -442,6 +442,7 @@ class runner(cmd.Cmd):
         best_config_by_fold_id = {}
         mkt_perf_by_fold_id = {}
         best_perfs_by_fold_id = {}
+        performances_by_potentials = {}
         if self.num_cores > 1:
             pool = multiprocessing.Pool(self.num_cores)
             if len(historic_data) <= self.num_cores:
@@ -504,7 +505,6 @@ class runner(cmd.Cmd):
             # For each best configuration, test it against all
             # other folds it was not optimized for
             # This dict is {fold_id:[perf, perf, ...}}
-            performances_by_potentials = {}
             pool = multiprocessing.Pool(self.num_cores)
             if len(best_config_by_fold_id) - 1 <= self.num_cores:
                 for fold_id, config in best_config_by_fold_id.items():
@@ -571,13 +571,13 @@ class runner(cmd.Cmd):
                 strategy_perf = result_tuple[2]
                 best_perfs_by_fold_id[key] = strategy_perf
 
-                for fold_id, config in best_config_by_fold_id.items():
-                    new_hist_data = copy.deepcopy(historic_data)
-                    del new_hist_data[int(fold_id)]
-                    instance_of_strategy = self.load_strategy(self.module, strategy, verbose=False)
-                    performances_by_potentials[fold_id] = get_perfs_by_fold(instance_of_strategy, config, new_hist_data, usd, btc)
-                for key, result in performances_by_potentials.items():
-                    performances_by_potentials[key] = result
+            for fold_id, config in best_config_by_fold_id.items():
+                new_hist_data = copy.deepcopy(historic_data)
+                del new_hist_data[int(fold_id)]
+                instance_of_strategy = self.load_strategy(self.module, strategy, verbose=False)
+                performances_by_potentials[fold_id] = get_perfs_by_fold(instance_of_strategy, config, new_hist_data, usd, btc)
+            for key, result in performances_by_potentials.items():
+                performances_by_potentials[key] = result
 
         # Find the strategy that had the best average performance on all other folds
         avg_perf_by_fold = {}

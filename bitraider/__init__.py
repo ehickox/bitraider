@@ -1,5 +1,6 @@
 from bitraider.trader_template import runner
 from bitraider.strategy import strategy
+from bitraider.exchange import cb_exchange_sim
 
 # bitraider
 #
