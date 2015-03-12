@@ -331,6 +331,8 @@ class runner(cmd.Cmd):
         print("WARNING: Optimization can take a LONG time i.e. days or more")
         print("Computational complexity is O(n^a) n = granularity, a = num values "
                 "to optimize.")
+        print("If you have more than one CPU core available, you can customize how\n"
+                "many parallel processes bitraider uses by typing \'config performance\'")
         usd = 1000
         btc = 1
         days_back_in_time = 7
@@ -440,119 +442,142 @@ class runner(cmd.Cmd):
         best_config_by_fold_id = {}
         mkt_perf_by_fold_id = {}
         best_perfs_by_fold_id = {}
-        pool = multiprocessing.Pool(self.num_cores)
-        if len(historic_data) <= self.num_cores:
+        if self.num_cores > 1:
+            pool = multiprocessing.Pool(self.num_cores)
+            if len(historic_data) <= self.num_cores:
+                for fold in historic_data:
+                    fold_id = str(historic_data.index(fold))
+                    instance_of_strategy = self.load_strategy(self.module, strategy, verbose=False)
+                    print("\nFinding best config for fold #"+fold_id)
+                    best_config_by_fold_id[fold_id] = pool.apply_async(
+                            get_best_config_for_strategy, (instance_of_strategy, attribute_vals_by_id, fold, usd, btc))
+                for key, result in best_config_by_fold_id.items():
+                    result_tuple = tuple(result.get())
+                    best_config_by_fold_id[key] = result_tuple[0]
+                    mkt_performance = result_tuple[1]
+                    mkt_perf_by_fold_id[key] = mkt_performance
+                    strategy_perf = result_tuple[2]
+                    best_perfs_by_fold_id[key] = strategy_perf
+
+                pool.close()
+                pool.join()
+            else:
+                h_d_copy = copy.deepcopy(historic_data)
+                num_left = len(h_d_copy)
+                while num_left > 0:
+                    for i in range(self.num_cores):
+                        pool = multiprocessing.Pool(self.num_cores)
+                        fold = h_d_copy[-num_left]
+                        fold_id = str(historic_data.index(fold))
+                        instance_of_strategy = self.load_strategy(self.module, strategy, verbose=False)
+                        print("\nFinding best config for fold #"+fold_id)
+                        best_config_by_fold_id[fold_id] = pool.apply_async(
+                                get_best_config_for_strategy, (instance_of_strategy, attribute_vals_by_id, fold, usd, btc))
+                        num_left -= 1
+                        if num_left <= 0:
+                            for key, result in best_config_by_fold_id.items():
+                                try:
+                                    result_tuple = tuple(result.get())
+                                    best_config_by_fold_id[key] = result_tuple[0]
+                                    mkt_performance = result_tuple[1]
+                                    mkt_perf_by_fold_id[key] = mkt_performance
+                                    strategy_perf = result_tuple[2]
+                                    best_perfs_by_fold_id[key] = strategy_perf
+                                except:
+                                    pass
+                            pool.close()
+                            pool.join()
+                            break
+                    for key, result in best_config_by_fold_id.items():
+                        try:
+                            result_tuple = tuple(result.get())
+                            best_config_by_fold_id[key] = result_tuple[0]
+                            mkt_performance = result_tuple[1]
+                            mkt_perf_by_fold_id[key] = mkt_performance
+                            strategy_perf = result_tuple[2]
+                            best_perfs_by_fold_id[key] = strategy_perf
+                        except:
+                            pass
+                    pool.close()
+                    pool.join()
+
+            # For each best configuration, test it against all
+            # other folds it was not optimized for
+            # This dict is {fold_id:[perf, perf, ...}}
+            performances_by_potentials = {}
+            pool = multiprocessing.Pool(self.num_cores)
+            if len(best_config_by_fold_id) - 1 <= self.num_cores:
+                for fold_id, config in best_config_by_fold_id.items():
+                    new_hist_data = copy.deepcopy(historic_data)
+                    del new_hist_data[int(fold_id)]
+                    instance_of_strategy = self.load_strategy(self.module, strategy, verbose=False)
+                    performances_by_potentials[fold_id] = pool.apply_async(
+                            get_perfs_by_fold,
+                            (instance_of_strategy, config, new_hist_data, usd, btc))
+                for key, result in performances_by_potentials.items():
+                    performances_by_potentials[key] = result.get()
+
+                pool.close()
+                pool.join()
+            else:
+                h_d_copy = copy.deepcopy(historic_data)
+                num_left = len(best_config_by_fold_id)
+                best_config_copies = copy.deepcopy(best_config_by_fold_id)
+                prev = 0
+                for fold_id in range(len(historic_data)):
+                    if fold_id % self.num_cores == 0:
+                        if num_left > 0:
+                            for i in range(self.num_cores):
+                                pool = multiprocessing.Pool(self.num_cores)
+                                prev = fold_id + i
+                                new_hist_data = copy.deepcopy(historic_data)
+                                if prev < len(new_hist_data):
+                                    del new_hist_data[prev]
+                                    instance_of_strategy = self.load_strategy(self.module,
+                                            strategy, verbose=False)
+                                    config = best_config_copies.pop(str(prev))
+                                    performances_by_potentials[prev] = pool.apply_async(
+                                            get_perfs_by_fold,
+                                            (instance_of_strategy, config, new_hist_data, usd, btc))
+                                    num_left -= 1
+                                if num_left <= 0:
+                                    for key, result in best_config_by_fold_id.items():
+                                        try:
+                                            performances_by_potentials[key] = result.get()
+                                        except:
+                                            pass
+                                    pool.close()
+                                    pool.join()
+                                    break
+                            for key, result in performances_by_potentials.items():
+                                try:
+                                    performances_by_potentials[key] = result.get()
+                                except:
+                                    pass
+                            pool.close()
+                            pool.join()
+        else:
+            # TODO: implement sequential option
             for fold in historic_data:
                 fold_id = str(historic_data.index(fold))
                 instance_of_strategy = self.load_strategy(self.module, strategy, verbose=False)
                 print("\nFinding best config for fold #"+fold_id)
-                best_config_by_fold_id[fold_id] = pool.apply_async(
-                        get_best_config_for_strategy, (instance_of_strategy, attribute_vals_by_id, fold, usd, btc))
+                best_config_by_fold_id[fold_id] = get_best_config_for_strategy(instance_of_strategy, attribute_vals_by_id, fold, usd, btc)
             for key, result in best_config_by_fold_id.items():
-                result_tuple = tuple(result.get())
+                result_tuple = tuple(result)
                 best_config_by_fold_id[key] = result_tuple[0]
                 mkt_performance = result_tuple[1]
                 mkt_perf_by_fold_id[key] = mkt_performance
                 strategy_perf = result_tuple[2]
                 best_perfs_by_fold_id[key] = strategy_perf
 
-            pool.close()
-            pool.join()
-        else:
-            h_d_copy = copy.deepcopy(historic_data)
-            num_left = len(h_d_copy)
-            while num_left > 0:
-                for i in range(self.num_cores):
-                    pool = multiprocessing.Pool(self.num_cores)
-                    fold = h_d_copy[-num_left]
-                    fold_id = str(historic_data.index(fold))
+                for fold_id, config in best_config_by_fold_id.items():
+                    new_hist_data = copy.deepcopy(historic_data)
+                    del new_hist_data[int(fold_id)]
                     instance_of_strategy = self.load_strategy(self.module, strategy, verbose=False)
-                    print("\nFinding best config for fold #"+fold_id)
-                    best_config_by_fold_id[fold_id] = pool.apply_async(
-                            get_best_config_for_strategy, (instance_of_strategy, attribute_vals_by_id, fold, usd, btc))
-                    num_left -= 1
-                    if num_left <= 0:
-                        for key, result in best_config_by_fold_id.items():
-                            try:
-                                result_tuple = tuple(result.get())
-                                best_config_by_fold_id[key] = result_tuple[0]
-                                mkt_performance = result_tuple[1]
-                                mkt_perf_by_fold_id[key] = mkt_performance
-                                strategy_perf = result_tuple[2]
-                                best_perfs_by_fold_id[key] = strategy_perf
-                            except:
-                                pass
-                        pool.close()
-                        pool.join()
-                        break
-                for key, result in best_config_by_fold_id.items():
-                    try:
-                        result_tuple = tuple(result.get())
-                        best_config_by_fold_id[key] = result_tuple[0]
-                        mkt_performance = result_tuple[1]
-                        mkt_perf_by_fold_id[key] = mkt_performance
-                        strategy_perf = result_tuple[2]
-                        best_perfs_by_fold_id[key] = strategy_perf
-                    except:
-                        pass
-                pool.close()
-                pool.join()
-
-        # For each best configuration, test it against all
-        # other folds it was not optimized for
-        # This dict is {fold_id:[perf, perf, ...}}
-        performances_by_potentials = {}
-        pool = multiprocessing.Pool(self.num_cores)
-        if len(best_config_by_fold_id) - 1 <= self.num_cores:
-            for fold_id, config in best_config_by_fold_id.items():
-                new_hist_data = copy.deepcopy(historic_data)
-                del new_hist_data[int(fold_id)]
-                instance_of_strategy = self.load_strategy(self.module, strategy, verbose=False)
-                performances_by_potentials[fold_id] = pool.apply_async(
-                        get_perfs_by_fold,
-                        (instance_of_strategy, config, new_hist_data, usd, btc))
-            for key, result in performances_by_potentials.items():
-                performances_by_potentials[key] = result.get()
-
-            pool.close()
-            pool.join()
-        else:
-            h_d_copy = copy.deepcopy(historic_data)
-            num_left = len(best_config_by_fold_id)
-            best_config_copies = copy.deepcopy(best_config_by_fold_id)
-            prev = 0
-            for fold_id in range(len(historic_data)):
-                if fold_id % self.num_cores == 0:
-                    if num_left > 0:
-                        for i in range(self.num_cores):
-                            pool = multiprocessing.Pool(self.num_cores)
-                            prev = fold_id + i
-                            new_hist_data = copy.deepcopy(historic_data)
-                            if prev < len(new_hist_data):
-                                del new_hist_data[prev]
-                                instance_of_strategy = self.load_strategy(self.module,
-                                        strategy, verbose=False)
-                                config = best_config_copies.pop(str(prev))
-                                performances_by_potentials[prev] = pool.apply_async(
-                                        get_perfs_by_fold,
-                                        (instance_of_strategy, config, new_hist_data, usd, btc))
-                                num_left -= 1
-                            if num_left <= 0:
-                                for key, result in best_config_by_fold_id.items():
-                                    try:
-                                        performances_by_potentials[key] = result.get()
-                                    except:
-                                        pass
-                                pool.close()
-                                pool.join()
-                                break
-                        for key, result in performances_by_potentials.items():
-                            try:
-                                performances_by_potentials[key] = result.get()
-                            except:
-                                pass
-                        pool.close()
-                        pool.join()
+                    performances_by_potentials[fold_id] = get_perfs_by_fold(instance_of_strategy, config, new_hist_data, usd, btc)
+                for key, result in performances_by_potentials.items():
+                    performances_by_potentials[key] = result
 
         # Find the strategy that had the best average performance on all other folds
         avg_perf_by_fold = {}

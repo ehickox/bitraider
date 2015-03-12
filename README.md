@@ -30,9 +30,9 @@ NOTE: See `example_strategy.py` for a more thurough example.
                 # Look at every 60 seconds, required attribute
                 self.any_attribute = 999
                 self.current_average = 0
-                self.recalculate_every = 8600
+                self.time_from_start = 8600
+                # Time needed to have a baseline
                 self.time_elapsed = 0
-                # Recalculate average every day
 
             def trade(self, timeslice):
                 # This will get run in a loop for each timeslice
