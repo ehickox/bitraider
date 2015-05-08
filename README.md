@@ -5,7 +5,7 @@ strategy class that enables you to implement different trading techniques.
 
 ###Quickstart:
 
-1. `$pip install bitraider`
+1. `$pip install --pre bitraider`
 
 2. Create a new directory in which your trader will reside
     ```
