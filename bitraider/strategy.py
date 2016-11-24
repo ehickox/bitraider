@@ -1,6 +1,6 @@
 import sys
 import pytz
-import xml.utils.iso8601
+#import xml.utils.iso8601
 import time
 import numpy
 from datetime import date, datetime, timedelta
