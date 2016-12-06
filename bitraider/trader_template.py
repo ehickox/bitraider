@@ -3,7 +3,7 @@ import pytz
 import copy
 import time
 import calendar
-import ConfigParser
+import configparser
 import cmd
 import itertools
 import smtplib
@@ -35,10 +35,10 @@ class runner(cmd.Cmd):
 
         # Init config
         self.config_path = "settings.ini"
-        self.config = ConfigParser.ConfigParser()
+        self.config = configparser.ConfigParser()
         try:
             self.config.read(self.config_path)
-        except Exception, err:
+        except Exception as err:
             print(str(err))
 
         # Set up strategy
@@ -51,7 +51,7 @@ class runner(cmd.Cmd):
             default_strategy_module = self.config.get("default_strategy", "module")
             default_strategy_class = self.config.get("default_strategy", "class")
             self.load_strategy(default_strategy_module, default_strategy_class)
-        except Exception, err:
+        except Exception as err:
             #print(str(err))
             print("No default strategy configured. Run "
                     "\'config default\' to set one")
@@ -69,7 +69,7 @@ class runner(cmd.Cmd):
             self.auth_secret = self.config.get("auth", "secret")
             self.auth_password = self.config.get("auth", "password")
             self.authenticate()
-        except Exception, err:
+        except Exception as err:
             #print(str(err))
             print("No authentication configured. Run "
                     "\'config auth\' to set it")
@@ -83,7 +83,7 @@ class runner(cmd.Cmd):
             for i in range(0, len(self.accounts)):
                 try:
                     print("Account ID: "+str(self.accounts[i]['id'])+" Available Funds: "+str(self.accounts[i]['available'])+" "+str(self.accounts[i]['currency'])+"")
-                except Exception, err:
+                except Exception as err:
                     print("Something went wrong while trying to authenticate \nwith the provided credentials. Try running \'config auth\' again.")
 
         # Default number of folds:
@@ -91,7 +91,7 @@ class runner(cmd.Cmd):
         # Try to load optimization and cross-validation settings
         try:
             self.num_folds = int(self.config.get("optimize", "folds"))
-        except Exception, err:
+        except Exception as err:
             #print(str(err))
             print("No optimization settings found. Run "
                     "\'config optimize\' to set them")
@@ -112,7 +112,7 @@ class runner(cmd.Cmd):
             self.email_server.login(self.email_user, self.email_pass)
             self.email_server.quit()
             self.email = True
-        except Exception, err:
+        except Exception as err:
             #print(str(err))
             print("No emailer settings found. Run "
                     "\'config email\' to set them")
@@ -125,7 +125,7 @@ class runner(cmd.Cmd):
         self.num_cores = 1
         try:
             self.num_cores = int(self.config.get("performance", "cores"))
-        except Exception, err:
+        except Exception as err:
             try:
                 self.config.add_section("performance")
             except:
@@ -156,56 +156,27 @@ class runner(cmd.Cmd):
             if option == "auth":
                 if self.accounts is not None:
                     print("Are you sure? Reconfiguring auth will wipe your current auth settings. [y/n]")
-                    input = raw_input("> ")
-                    if input == "y":
-                        print("Paste in your CoinbaseExchange API key:")
-                        input = raw_input("> ")
-                        self.auth_key = input
-                        print("Paste in your CoinbaseExchange API secret:")
-                        input = raw_input("> ")
-                        self.auth_secret = input
-                        print("Paste in your CoinbaseExchange API passphrase:")
-                        input = raw_input("> ")
-                        if input is not "":
-                            self.auth_password = input
-                            self.config.set("auth", "key", self.auth_key)
-                            self.config.set("auth", "secret", self.auth_secret)
-                            self.config.set("auth", "password", self.auth_password)
-                            with open(self.config_path, "wb") as config_file:
-                                self.config.write(config_file)
-                            self.authenticate()
-                    elif input == "n":
+                    raw_input = input("> ")
+                    if raw_input == "y":
+                        self.authenticate_exchange(self)
+                    elif raw_input == "n":
                         print("Exiting to main menu")
                         pass
                 else:
-                    print("Paste in your CoinbaseExchange API key:")
-                    input = raw_input("> ")
-                    self.auth_key = input
-                    print("Paste in your CoinbaseExchange API secret:")
-                    input = raw_input("> ")
-                    self.auth_secret = input
-                    print("Paste in your CoinbaseExchange API passphrase:")
-                    input = raw_input("> ")
-                    self.auth_password = input
-                    self.config.set("auth", "key", self.auth_key)
-                    self.config.set("auth", "secret", self.auth_secret)
-                    self.config.set("auth", "password", self.auth_password)
-                    with open(self.config_path, "wb") as config_file:
-                        self.config.write(config_file)
-                    self.authenticate()
+                    self.authenticate_exchange()
 
             elif option == "default":
                 print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
-                option = raw_input("> ")
+                option = input("> ")
                 filename = str(option)
                 self.config.set("default_strategy", "module", filename)
                 print("Type the name of the class within "+str(option)+" representing the strategy to load:")
-                option = raw_input("> ")
+                option = input("> ")
                 loaded_strategy = str(option)
                 if self.strategies is not None:
                     if loaded_strategy in self.strategies.keys():
                         print("Error: "+loaded_strategy+" is already loaded")
-                        option = raw_input("> ")
+                        option = input("> ")
                         loaded_strategy = str(option)
 
                 self.config.set("default_strategy", "class", loaded_strategy)
@@ -215,7 +186,7 @@ class runner(cmd.Cmd):
 
             elif option == "optimize":
                 print("Type the number of folds to be used for cross-validation:")
-                option = raw_input("> ")
+                option = input("> ")
                 self.num_folds = int(option)
                 self.config.set("optimize", "folds", self.num_folds)
                 with open(self.config_path, "wb") as config_file:
@@ -223,11 +194,11 @@ class runner(cmd.Cmd):
 
             elif option == "email":
                 print("Type your gmail email: ")
-                option = raw_input("> ")
+                option = input("> ")
                 self.email_user = str(option)
                 self.config.set("email", "username", self.email_user)
                 print("Type your gmail password: ")
-                option = raw_input("> ")
+                option = input("> ")
                 self.email_pass = str(option)
                 self.email_server = smtplib.SMTP('smtp.gmail.com:587')
                 self.config.set("email", "password", self.email_pass)
@@ -236,13 +207,13 @@ class runner(cmd.Cmd):
                     self.email_server.starttls()
                     self.email_server.login(self.email_user, self.email_pass)
                     self.email_server.quit()
-                except Exception, err:
+                except Exception as err:
                     print(str(err))
                     print("Something went wrong while logging in using the provided "
                             "credentials. Try again.")
                     return
                 print("Type the destination email: ")
-                option = raw_input("> ")
+                option = input("> ")
                 self.email_dest = str(option)
                 self.config.set("email", "destination", self.email_dest)
                 self.email = True
@@ -253,7 +224,7 @@ class runner(cmd.Cmd):
             elif option == "performance":
                 print("Type the number of parallel processes to be used: ")
                 print("Available cores: "+str(multiprocessing.cpu_count()))
-                option = raw_input("> ")
+                option = input("> ")
                 self.num_cores = int(option)
                 self.config.set("performance", "cores", self.num_cores)
                 with open(self.config_path, "wb") as config_file:
@@ -262,11 +233,11 @@ class runner(cmd.Cmd):
     def do_load(self, option):
         """Load a strategy"""
         print("Type the filename (without .py) containing the class which inherits from bitraider.strategy:")
-        input = raw_input("> ")
-        filename = str(input)
-        print("Type the name of the class within "+str(input)+" representing the strategy to load:")
-        input = raw_input("> ")
-        loaded_strategy = str(input)
+        raw_input = input("> ")
+        filename = str(raw_input)
+        print("Type the name of the class within "+str(raw_input)+" representing the strategy to load:")
+        raw_input = input("> ")
+        loaded_strategy = str(raw_input)
         self.load_strategy(filename, loaded_strategy)
 
     def do_backtest(self, option):
@@ -275,22 +246,22 @@ class runner(cmd.Cmd):
         strategy_to_backtest = ""
         print("Enter the class name of the strategy to backtest, or press enter to\n"
                 "backtest on the default strategy.")
-        input = raw_input("> ")
-        if input == "":
+        raw_input = input("> ")
+        if raw_input == "":
             print("Performing backest on default strategy: "+str(self.config.get("default_strategy" ,"class")))
             strategy_to_backtest = str(self.config.get("default_strategy", "class"))
         else:
-            strategy_to_backtest = str(input)
+            strategy_to_backtest = str(raw_input)
 
         usd = 1000
         btc = 1
         days_back_in_time = 7
         print("Enter the number of days back in time to backtest on: ")
-        input = raw_input("> ")
-        if input == "":
+        raw_input = input("> ")
+        if raw_input == "":
             print("Performing backtest on default of 7 days.")
         else:
-            days_back_in_time = float(input)
+            days_back_in_time = float(raw_input)
             print("Performing backtest on last "+str(days_back_in_time)+" days.")
 
         curr_time = datetime.now(tz=self.curr_timezone)
@@ -298,19 +269,19 @@ class runner(cmd.Cmd):
         start_time = start_time.isoformat(' ')
         end_time = curr_time.isoformat(' ')
         print("Enter the initial USD amount:")
-        input = raw_input("> ")
-        if input == "":
+        raw_input = input("> ")
+        if raw_input == "":
             print("Using default starting USD amount of $1,000")
         else:
-            usd = float(input)
+            usd = float(raw_input)
             print("Using starting USD amount of $"+str(usd))
 
         print("Enter the initial BTC amount:")
-        input = raw_input("> ")
-        if input == "":
+        raw_input = input("> ")
+        if raw_input == "":
             print("Using default starting BTC amount of 1")
         else:
-            btc = float(input)
+            btc = float(raw_input)
             print("Using starting BTC amount of "+str(btc))
 
         if strategy_to_backtest is not "":
@@ -337,8 +308,8 @@ class runner(cmd.Cmd):
         btc = 1
         days_back_in_time = 7
         print("Enter the class name of the strategy to be optimized:")
-        input = raw_input("> ")
-        if input not in self.strategies.keys():
+        raw_input = input("> ")
+        if raw_input not in self.strategies.keys():
             print("Error: not found. Exiting to main menu")
             return
         strategy_to_optimize = input
@@ -347,27 +318,27 @@ class runner(cmd.Cmd):
         print("Enter the timeframe to optimize for i.e. the time to simulate over:")
         print("Current cross-validation settings are set for: "+str(self.num_folds)+" fold(s)")
         days_back_in_time = 7
-        input = raw_input("> ")
-        if input == "":
+        raw_input = input("> ")
+        if raw_input == "":
             print("Performing optimization for default of 7 days.")
         else:
-            days_back_in_time = float(input)
+            days_back_in_time = float(raw_input)
             print("Performing optimization based on  "+str(days_back_in_time)+" days.")
 
         print("Enter the initial USD amount:")
-        input = raw_input("> ")
-        if input == "":
+        raw_input = input("> ")
+        if raw_input == "":
             print("Using default starting USD amount of $1,000")
         else:
-            usd = float(input)
+            usd = float(raw_input)
             print("Using starting USD amount of $"+str(usd))
 
         print("Enter the initial BTC amount:")
-        input = raw_input("> ")
-        if input == "":
+        raw_input = input("> ")
+        if raw_input == "":
             print("Using default starting BTC amount of 1")
         else:
-            btc = float(input)
+            btc = float(raw_input)
             print("Using starting BTC amount of "+str(btc))
 
         self.strategies[strategy].exchange = cb_exchange_sim(start_usd=usd, start_btc=btc)
@@ -403,17 +374,17 @@ class runner(cmd.Cmd):
             if "__" not in str(attribute) and "_abc" not in str(attribute) and str(attribute) not in reserved_attributes:
                 # Optimizing for interval would poll API too frequently
                 print("Enter the lower bound for attribute: "+str(attribute)+", or press enter to skip:")
-                input = raw_input("> ")
-                if input == "":
+                raw_input = input("> ")
+                if raw_input == "":
                     pass
                 else:
-                    lower_bound = float(input)
+                    lower_bound = float(raw_input)
                     print("Enter the upper bound for attribute: "+str(attribute)+":")
-                    input = raw_input("> ")
-                    upper_bound = float(input)
+                    raw_input = input("> ")
+                    upper_bound = float(raw_input)
                     print("Enter the granularity of this attribute i.e. how many different values to try:")
-                    input = raw_input("> ")
-                    granularity = float(input)
+                    raw_input = input("> ")
+                    granularity = float(raw_input)
                     if upper_bound is not None and lower_bound is not None:
                         bounds_by_attribute[str(attribute)] = {"lower":lower_bound, "upper":upper_bound, "granularity":granularity}
                         #self.strategies[strategy][attribute] = float(lower_bound)
@@ -614,6 +585,7 @@ class runner(cmd.Cmd):
             body += "Strategy's avg performance on all other folds: "+str(avg_perf_by_fold[fold_id])+"\n"
         body += "The best configuration is: "+str(best_config)+"\n"
         print(body)
+
     # End python cmd funtions
 
     def send_email(self, fromaddr, toaddr, subject="bitraider", body=""):
@@ -632,7 +604,7 @@ class runner(cmd.Cmd):
             self.email_server.login(self.email_user, self.email_pass)
             self.email_server.sendmail(fromaddr, toaddr, text)
             self.email_server.quit()
-        except Exception, err:
+        except Exception as err:
             print("error: email failed")
             print(str(err))
 
@@ -640,13 +612,31 @@ class runner(cmd.Cmd):
         """Helper function to find all possible combinations of strategy parameters"""
         return (dict(itertools.izip(dicts, x)) for x in itertools.product(*dicts.itervalues()))
 
+    def authenticate_exchange(self):
+        print("Paste in your CoinbaseExchange API key:")
+        raw_input = input("> ")
+        self.auth_key = input
+        print("Paste in your CoinbaseExchange API secret:")
+        raw_input = input("> ")
+        self.auth_secret = input
+        print("Paste in your CoinbaseExchange API passphrase:")
+        raw_input = input("> ")
+        if raw_input is not "":
+            self.auth_password = raw_input
+            self.config.set("auth", "key", self.auth_key)
+            self.config.set("auth", "secret", self.auth_secret)
+            self.config.set("auth", "password", self.auth_password)
+            with open(self.config_path, "wb") as config_file:
+                self.config.write(config_file)
+            self.authenticate()
+
     def authenticate(self):
         """Attempts to authenticate using the credentials on the runner object"""
         try:
             self.exchange = cb_exchange(self.auth_key, self.auth_secret, self.auth_password)
             self.accounts = self.exchange.list_accounts()
 
-        except Exception, err:
+        except Exception as err:
             print("Error! Only unauthorized endpoints are available.")
             print("error: "+str(err))
             print("If you would like bitraider to walk you through authentication, enter the commands: \'config\' > \'auth\'")
